@@ -132,7 +132,7 @@ class ForcePhotometry():
             fig = ax.figure
 
         x, y, err = self.data_forcefit[["obsmjd","ampl","ampl.err"]].values.T
-        f0coef = 10**((self.data_forcefit["magzp"]-scalezp)/2.5) if scalezp is not None else 1
+        f0coef = 10**(-(self.data_forcefit["magzp"]-scalezp)/2.5) if scalezp is not None else 1
     
         for i,band_ in [[1,"C0"],[2,"C2"],[3,"C1"]]:
             if i not in self.data_forcefit["filterid"]:
