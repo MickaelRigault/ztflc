@@ -3,13 +3,9 @@
 
 
 import numpy as np
-from ztfquery import query, marshal
-
 from astropy.io import fits
 
-import astrobject
-from pixelproject import grid
-
+from ztfquery import query, marshal
 from ztfquery.io import LOCALSOURCE
 LOCALDATA = LOCALSOURCE+"forcephotometry/"
 

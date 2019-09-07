@@ -2,10 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
-import astrobject
 from astropy.io import fits
 from scipy import stats
-#from pixelproject import grid
 
 class DiffData():
     """ """
