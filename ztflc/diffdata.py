@@ -5,14 +5,13 @@ import numpy as np
 import astrobject
 from astropy.io import fits
 from scipy import stats
-from pixelproject import grid
+#from pixelproject import grid
 
 class DiffData():
     """ """
-    def __init__(self, diffimgpath, psfimgpath, radec=None, inpixels=False):
+    def __init__(self, diffimgpath, psfimgpath, coords, inpixels=False, clean=True):
         """ """
-        self.set_data(diffimgpath, psfimgpath)
-        self.set_target_coords(*radec, inpixels=inpixels)
+        self.set_data(diffimgpath, psfimgpath, coords, inpixels=inpixels, clean=clean)
 
     # ================ #
     #    Methods       #
@@ -20,72 +19,87 @@ class DiffData():
     # ------- #
     # FITTER  #
     # ------- #
-    def fit_flux(self, use_datanoise=False):
+    def fit_flux(self):
         """ """
         from .fitter import DiffImgFitter
-        if not hasattr(self,"grid_diffaligned"):
-            _ = self.get_aligned_grid()
-            
+        from astropy.stats import mad_std
         # Load the fitter
-        self.fitter = DiffImgFitter(self.grid_diffaligned.geodataframe["data"].values, 
-                                    np.ravel(self.psfimg),
-                                    self.estimated_noise if use_datanoise else 0,
+        self.fitter = DiffImgFitter(self.diffimg, self.psfimg,
+                                    0,
                                     shape= self.psfshape)
         
         # Load the fitter
-        amplitude_guess = np.max(self.fitter.data)*(np.sqrt(2*np.pi*2**2)) # 2 sigma guess
-        sigma_int_guess = 1 if use_datanoise else np.std(self.fitter.data)
+        robust_nmad = mad_std(self.fitter.data[~np.isnan(self.fitter.data) ])
+        fit_prop = {"ampl_guess": np.nanmax(self.fitter.data)*(np.sqrt(2*np.pi*2**2)), # 2 sigma guess
+                    "sigma_guess":robust_nmad
+                    }
+        fit_prop["ampl_boundaires"] = [-2*np.nanmin(self.fitter.data)*(np.sqrt(2*np.pi*2**2)),
+                                             5*np.nanmax(self.fitter.data)*(np.sqrt(2*np.pi*2**2))]
+        fit_prop["sigma_boundaries"] = [robust_nmad/10., np.nanstd(self.fitter.data)*2]
+        
         # Return fitter output
-        return self.fitter.fit(ampl_guess=amplitude_guess, sigma_guess=sigma_int_guess)
+        return self.fitter.fit(**fit_prop)
     
     # ------- #
     # SETTER  #
     # ------- #
-    def set_target_coords(self, ra,dec, inpixels=False):
-        """ set the target coordinates.
-        
-        Parameters
-        ----------
-        ra,dec: [float, float]
-            Coordinates (in deg or in pixels)
-
-        inpixels: [bool] -optional-
-            Are the coordinates in pixels [True] or in RaDEC [False] ? 
-
-        Returns
-        -------
-        None
-        """
-        if not inpixels:
-            self.radec = ra,dec
-        else:
-            self._xy = ra,dec
-
-    def set_data(self, diffimgpath, psfimgpath, **kwargs):
+    def set_data(self, diffimgpath, psfimgpath, coords, inpixels=False,
+                    clean=True,**kwargs):
         """ """
-        self.diffimg = astrobject.get_image(diffimgpath, index=1, background=0, ascopy=True, **kwargs)
-        self.psfimg  = fits.getdata(psfimgpath)
+        from astropy import wcs
+        from astropy.io import fits
+        from scipy import ndimage
+        from astropy.stats import mad_std
+        
+        self._xy = coords if inpixels else None
+        #
+        # Handeling too many open files
+        #
+        # PSF
+        with fits.open(psfimgpath) as psf:
+            self._psfimg_raw = psf[0].data.copy()
+            
+        with fits.open(diffimgpath) as fdiff:
+            # x,y position
+            if self._xy is None:
+                wcs_   = wcs.WCS(fdiff[1].header)
+                self._xy = wcs_.all_world2pix([coords], 0)[0]
+                del wcs_
+                
+            # data position
+            x,y = np.asarray(self._xy, dtype="int")
+            buffer    = (np.asarray(self.psfshape))/2 - 0.5
+            xmin,xmax = int(x-buffer[0]),int(x+buffer[0]+1)
+            ymin,ymax = int(y-buffer[1]),int(y+buffer[1]+1)
+            self._diffimg = fdiff[1].data[ymin:ymax,xmin:xmax].copy()
+            self._datatmp = fdiff[1].data.copy()
+            self._diffimg_targetpos = self._xy - [xmin,ymin]
+            self._header = fdiff[1].header.copy()
 
+        if clean:
+            self._iscleaned=True
+            flagout = self._diffimg < -mad_std(self._diffimg)*10
+            self._diffimg[flagout] = np.NaN
+        else:
+            self._iscleaned=False
+            
+        self._psf_shift = self._diffimg_targetpos - np.asarray(self.psfshape)/2+0.5
+        # ::-1 because numpy are not image but matrices
+        self._psfimg = ndimage.interpolation.shift(self._psfimg_raw, self._psf_shift[::-1], order=5)
+        
     # ------- #
     # GETTER  #
     # ------- #
     def get_main_info(self):
         """ """
         header = {k.lower():self.header[k] for k in self._main_columns}
-        x,y = self.target_position
-        header["target_x"] = x
-        header["target_y"] = y
+        header["target_x"], header["target_y"] = self.target_position
         return header
     
-    def get_aligned_grid(self, update=True):
-        """ """
-        aligned_diffgrid = self.grid_diffimg.project_to(self.grid_psf)
-        if update:
-            self._grid_diffaligned = aligned_diffgrid
-        return aligned_diffgrid
-
     def estimate_noise(self, buffer=10, use="nmad"):
         """ """
+        raise NotImplementedError("estimate_noise is not ready yet")
+        """
         from shapely import geometry
         from astropy.stats import mad_std
         
@@ -105,10 +119,26 @@ class DiffData():
         self.noise_data["p(zero)"]  = stats.norm.pdf(self.noise_data["mean"], loc=0, scale=self.noise_data["mean.err"])
         self.noise_data["differr"]  = self.noise_data[use]
         return self.noise_data["differr"]
-        
+        """
+    
     # ------- #
     # PLOTTER #
     # ------- #
+    def show(self):
+        """ """
+        import matplotlib.pyplot as mpl
+        fig = mpl.figure(figsize=[8,3])
+        prop = dict(origin="lower")#vmin=-20,vmax=60)
+
+        ax = fig.add_subplot(131)
+        ax.imshow(self.diffimg,**prop)
+
+        ax = fig.add_subplot(132)
+        ax.imshow(self.psfimg_raw,**prop)
+
+        ax = fig.add_subplot(133)
+        ax.imshow(self.psfimg,**prop)
+    
     def show_alignment(self, ax=None):
         """ """
         # - Data
@@ -150,71 +180,55 @@ class DiffData():
     # ================ #
     #  Properties      #
     # ================ #
-    # Grids
+    #
+    # Data Image
+    #
     @property
-    def grid_diffaligned(self):
-        """ Re-aligned diffimg (aligned with PSF image, that is the target is in the center of a pixel)  """
-        if not hasattr(self,"_grid_diffaligned"):
-            raise AttributeError("No aligned grid derived yet. Run self.get_aligned_grid()")
-        return self._grid_diffaligned
-        
-    @property
-    def grid_diffimg(self):
-        """ PixelProjet Grid of the input difference image"""
-        if not hasattr(self, "_grid_diffimg"):
-            x,y = self.target_position
-            buffer = (np.asarray(self.psfshape))/2+5
-            xmin,xmax = int(x-buffer[0]),int(x+buffer[0])
-            ymin,ymax = int(y-buffer[1]),int(y+buffer[1])
-            # Data Grid
-            self._grid_diffimg = grid.Grid.from_stamps(self.diffimg.data[ymin:ymax,xmin:xmax ], origin=[xmin,ymin])
-            
-        # - Defined, let's go
-        return self._grid_diffimg
+    def diffimg(self):
+        """ Difference data patch around the target. """
+        if not hasattr(self,"_diffimg"):
+            self._diffimg = None
+        return self._diffimg
 
     @property
-    def grid_psf(self):
-        """ PixelProjet Grid of the input PSF image """
-        if not hasattr(self, "_grid_psf"):
-            x,y = self.target_position
-            # Data Grid Centered at the target location
-            self._grid_psf = grid.get_simple_grid(*self.psfshape, shift_origin=(np.asarray([x,y]) - np.asarray(self.psfshape)/2+0.5))
-            
-        # - Defined, let's go
-        return self._grid_psf
-            
-    # Others
+    def psfimg_raw(self):
+        """ PSF data as given by the IRSA pipeline """
+        if not hasattr(self,"_psfimg_raw"):
+            self._psfimg_raw = None
+        return self._psfimg_raw
+
     @property
-    def estimated_noise(self):
-        """ """
-        if not hasattr(self,"noise_data"):
-            self.estimate_noise(10)
-        return self.noise_data["differr"]
+    def psfimg(self):
+        """ PSF data re-aligned with the target """
+        if not hasattr(self,"_psfimg_raw"):
+            self._psfimg = None
+        return self._psfimg
+
     
-    @property
-    def target_position(self):
-        """ """
-        if hasattr(self,"_xy"):
-            return self._xy
-        
-        if not hasattr(self,"radec"):
-            raise AttributeError("No coordinate set. see self.set_target_radec")
-
-        if not hasattr(self,"diffimg"):
-            raise AttributeError("No diff image (that has the wcs solution)")
-
-        self._xy = self.diffimg.coords_to_pixel(*self.radec)
-        return self._xy
-
     @property
     def psfshape(self):
         """ shape of the psf image """
-        return np.shape(self.psfimg)
-    
+        return np.shape(self.psfimg_raw)
+
+    #
+    # target
+    #
+    @property
+    def target_position(self):
+        """ """
+        if not hasattr(self,"_xy"):
+            self._xy = None
+        return self._xy
+
+    #
+    # Additional information
+    #        
     @property
     def header(self):
         """ Data header"""
-        return self.diffimg.header
+        if not hasattr(self,"_header"):
+            self._header = None
+        return self._header
 
     @property
     def _main_columns(self):

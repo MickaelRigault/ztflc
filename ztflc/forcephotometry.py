@@ -58,7 +58,8 @@ class ForcePhotometry():
     # -------- #
     # FITTER   #
     # -------- #
-    def run_forcefit(self, indexes=None, update_diffdata=False, store=True, verbose=True):
+    def run_forcefit(self, indexes=None, update_diffdata=False,
+                        store=True, verbose=True, no_badsub=False):
         """ """
         import gc
         if indexes is None:
@@ -68,19 +69,19 @@ class ForcePhotometry():
         if verbose:
             print("Starting run_forcefit() for %d image differences"%len(indexes))
             
-        for i in indexes:
-            if i>244:
-                print("skip for no")
-                break
-            
+        for i in indexes:            
             if verbose:
                 print("running %d "%i)
                 print(self.filepathes[i][0].split("/")[-1])
             diffdata = self.get_ith_diffdata(i, update=update_diffdata)
-            fitresults = diffdata.fit_flux()
-            datainfo   = diffdata.get_main_info()
-            dataout[i] = {**fitresults,**datainfo}
-            
+            has_nan = np.any(np.isnan(diffdata.diffimg))
+            if has_nan and no_badsub:
+                print("NaNs in the image, skipped")
+            else:
+                fitresults = diffdata.fit_flux()
+                datainfo   = diffdata.get_main_info()
+                dataout[i] = {**fitresults,**datainfo}
+                dataout[i]["data_hasnan"] = has_nan
             del diffdata
             gc.collect()
             
@@ -89,7 +90,7 @@ class ForcePhotometry():
             from .io import LOCALDATA
             self._data_forcefit.to_csv(LOCALDATA+"/%s.csv"%self.io.target, index=False)
             
-    def get_ith_diffdata(self, index, update=False, rebuild=False):
+    def get_ith_diffdata(self, index, update=False, rebuild=False, **kwargs):
         """ loads and returns a DiffData object corresponding 
         at the ith-entry of the self.filepathes 
 
@@ -103,21 +104,49 @@ class ForcePhotometry():
             be updated to self.diffdata
 
         rebuild: [bool] -optional-
-    da            Even if self.DiffData[index] exists, shall this remeasure it ?
+            Even if self.DiffData[index] exists, shall this remeasure it ?
 
         Returns
         -------
         DiffData
         """
         if self.diffdata is None or self.diffdata[index] is None or rebuild:
-            diffdata = DiffData(*self.filepathes[index], self.io.get_coordinate())
+            diffdata = DiffData(*self.filepathes[index], self.io.get_coordinate(), **kwargs)
             if update:
                 self.diffdata[index] = diffdata
             return diffdata
 
         return self.diffdata[index]
             
-        
+
+    # --------- #
+    #  PLOTTER  #
+    # --------- #
+    def show_lc(self, ax=None, scalezp=None, reference=False, **kwargs):
+        """ """
+        # - Figure
+        if ax is None:
+            fig = mpl.figure()
+            ax = fig.add_subplot(111)
+        else:
+            fig = ax.figure
+
+        x, y, err = self.data_forcefit[["obsmjd","ampl","ampl.err"]].values.T
+        f0coef = 10**((self.data_forcefit["magzp"]-scalezp)/2.5) if scalezp is not None else 1
+    
+        for i,band_ in [[1,"C0"],[2,"C2"],[3,"C1"]]:
+            if i not in self.data_forcefit["filterid"]:
+                continue
+            flag = np.asarray(self.data_forcefit["filterid"]==i, dtype="bool")
+            
+            prop = {**dict(marker="o", color=band_, zorder=5), **kwargs}
+            ax.scatter(x[flag],(y*f0coef)[flag], **prop)
+            prop["zorder"] = prop.get("zorder", 5)-1
+            ax.errorbar(x[flag],(y*f0coef)[flag], yerr=err[flag], 
+                                ls="None",ecolor="0.6",**prop)
+
+        ax.axhline(0, ls="--", color="0.5")
+        return ax
     # =============== #
     #  Properties     #
     # =============== #

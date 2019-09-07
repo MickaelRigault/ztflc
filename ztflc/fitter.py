@@ -93,6 +93,7 @@ class DiffImgFitter( object ):
             
         self._inputshape = np.shape(diffimg)
         self.data    = np.ravel(diffimg)
+        self.flagout = np.isnan(self.data)
         self.profile = np.ravel(psfimg)
         self._shape  = shape
         
@@ -109,11 +110,11 @@ class DiffImgFitter( object ):
             self.set_parameters(param)
                   
         if simple_chi2:
-            return np.sum( (self.data-self.scaled_model)**2/self.variance_tot  )
+            return np.nansum( (self.data-self.scaled_model)**2/self.variance_tot  )
         
         if not use_prior:
-            return -2*np.sum( self.get_loglikelihood() )
-        return -2*np.sum( self.get_logproba() )
+            return -2*np.nansum( self.get_loglikelihood() )
+        return -2*np.nansum( self.get_logproba() )
     
 
     # // Posterior    
