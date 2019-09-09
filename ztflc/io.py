@@ -3,11 +3,18 @@
 
 
 import numpy as np
+import pandas
 from astropy.io import fits
 
 from ztfquery import query, marshal
 from ztfquery.io import LOCALSOURCE
 LOCALDATA = LOCALSOURCE+"forcephotometry/"
+
+import os
+if os.path.isfile(LOCALSOURCE+"/externaldata/target_position.csv"):
+    TARGET_IO = pandas.read_csv(LOCALSOURCE+"/externaldata/target_position.csv")
+else:
+    TARGET_IO = pandas.DataFrame(columns=["name", "mean_ra","mean_dec","median_ra","median_dec"])
 
 class ZTFTarget( object ):
     """ """
@@ -104,12 +111,16 @@ class ZTFTarget( object ):
     # ------- #
     # GETTER  #
     # ------- #
-    def get_coordinate(self, forcetarget=False):
+    def get_coordinate(self, forcetarget=False, use="mean"):
         """ """
         if hasattr(self,"_radec") and not forcetarget:
             return self._radec
         
         if len( np.atleast_1d(self.target) )==1:
+            if self.target in TARGET_IO["name"].values:
+                return TARGET_IO[TARGET_IO["name"]==self.target][
+                    ["%s_ra"%use,"%s_dec"%use]].values[0]
+            
             return self.marshal.get_target_coordinates(self.target).values[0]
         return self.marshal.get_target_coordinates(self.target).values
 
