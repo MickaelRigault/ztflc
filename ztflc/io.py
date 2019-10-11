@@ -82,10 +82,13 @@ class ZTFTarget( object ):
         
     def load_metadata(self, fromname=False):
         """ """
-        if fromname and self.has_name():
+        if self.has_radec() and not fromname:
+            dictmetadata = self.marshal.get_metadataquery(*self.radec, *self.jdrange, size=0.01)
+        elif self.has_name():
             dictmetadata = self.marshal.get_target_metadataquery(self.name)
         else:
-            dictmetadata = self.marshal.get_metadataquery(*self._radec, *self._jdrange, size=0.01)
+            raise AttributeError("Cannot load the metadata, no self.name and no _radec")
+            
             
         self.zquery.load_metadata(**dictmetadata)
 
@@ -112,10 +115,10 @@ class ZTFTarget( object ):
     # ------- #
     # GETTER  #
     # ------- #
-    def get_coordinate(self, forcetarget=False, use="mean"):
+    def get_coordinate(self, forcename=False, use="mean"):
         """ """
-        if hasattr(self,"_radec") and not forcetarget:
-            return self._radec
+        if self.has_radec() and not forcename:
+            return self.radec
         
         if len( np.atleast_1d(self.name) )==1:
             if self.name in TARGET_IO["name"].values:
@@ -177,7 +180,29 @@ class ZTFTarget( object ):
         if not self.has_name():
             raise AttributeError("Target not loaded. See set_name()")
         return self._name
+
+    @property
+    def jdrange(self):
+        """ """
+        if not self.has_jdrange():
+            return None
+        return self._jdrange
+
+    @property
+    def radec(self):
+        """ """
+        if not self.has_radec():
+            return None
+        return self._radec
     
     def has_name(self):
         """ Test if the current instance has a target set """
         return hasattr(self,"_name") and self._name is not None
+    
+    def has_radec(self):
+        """ """
+        return hasattr(self, "_radec") and self._radec is not None
+
+    def has_jdrange(self):
+        """ """
+        return hasattr(self, "_jdrange")

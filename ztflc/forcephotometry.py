@@ -128,7 +128,7 @@ class ForcePhotometry():
     # --------- #
     #  PLOTTER  #
     # --------- #
-    def show_lc(self, ax=None, scalezp=None, reference=False, **kwargs):
+    def show_lc(self, ax=None, scalezp=25, reference=False, **kwargs):
         """ """
         # - Figure
         if ax is None:
