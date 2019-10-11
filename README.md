@@ -54,3 +54,15 @@ fp = forcephotometry.ForcePhotometry.from_name(ZTF18aaaaaaa)
 
 the code will use `ztfquery.marshal` to recover the information you need (ra, dec jdmin, jdmax).
 
+
+# Downloading the file you need.
+
+The first time you are going to run the forcephotometry for a given target, you most likely need to download the associated data. For instance for `ZTF18aaaaaaa`
+
+```python 
+from ztflc import forcephotometry
+# Setup the target
+fp = forcephotometry.ForcePhotometry.from_name(ZTF18aaaaaaa)
+# Download the data:
+fp.io.download_data()
+```
