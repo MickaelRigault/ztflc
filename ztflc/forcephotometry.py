@@ -33,7 +33,7 @@ class ForcePhotometry():
         return cls(ZTFTarget.from_name(name))
 
     @classmethod
-    def from_coords(cls, ra, dec, jdmin=None, jdmax=None):
+    def from_coords(cls, ra, dec, jdmin=None, jdmax=None,  name="unknown"):
         """ Load the ForcePhotometry from Target Name """
         from .io import ZTFTarget
         return cls(ZTFTarget.from_coords(ra, dec, jdmin=jdmin, jdmax=jdmax))
@@ -54,12 +54,19 @@ class ForcePhotometry():
         """ """
         self._filepathes = self.io.get_diffimg_forcepsf_filepath(**kwargs)
         self._diffdata = None
+
+    def store(self, filename=None):
+        """ """
+        if filename is None:
+            from .io import LOCALDATA
+            filename = LOCALDATA+"/%s.csv"%self.io.name
+        self._data_forcefit.to_csv(filename, index=False)
         
     # -------- #
     # FITTER   #
     # -------- #
     def run_forcefit(self, indexes=None, update_diffdata=False,
-                        store=True, verbose=True, no_badsub=False):
+                     store=False, verbose=True, no_badsub=False):
         """ """
         import gc
         if indexes is None:
@@ -87,8 +94,7 @@ class ForcePhotometry():
             
         self._data_forcefit = pandas.DataFrame(dataout).T
         if store:
-            from .io import LOCALDATA
-            self._data_forcefit.to_csv(LOCALDATA+"/%s.csv"%self.io.target, index=False)
+            self.store()
             
     def get_ith_diffdata(self, index, update=False, rebuild=False, **kwargs):
         """ loads and returns a DiffData object corresponding 

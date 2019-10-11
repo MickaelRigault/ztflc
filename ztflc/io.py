@@ -26,7 +26,7 @@ class ZTFTarget( object ):
         """ """
         self._zquery = query.ZTFQuery()
         if target is not None:
-            self.set_target(target)
+            self.set_name(target)
 
     @classmethod
     def from_name(cls, name):
@@ -34,11 +34,12 @@ class ZTFTarget( object ):
         return cls(name)
 
     @classmethod
-    def from_coords(cls, ra, dec, jdmin=None, jdmax=None):
+    def from_coords(cls, ra, dec, jdmin=None, jdmax=None, name="unknown"):
         """ """
         this = cls()
         this.set_coordinate(ra, dec)
         this.set_jdrange(jdmin, jdmax)
+        this.set_name(name)
         return this
     
     # ================ #
@@ -48,9 +49,9 @@ class ZTFTarget( object ):
     # ------- #
     # SETTER  #
     # ------- #
-    def set_target(self, targetname, load_metadata=True):
+    def set_name(self, targetname):
         """ """
-        self._target = targetname
+        self._name = targetname
 
     def set_coordinate(self, ra, dec):
         """ provide the coordinate.
@@ -79,10 +80,10 @@ class ZTFTarget( object ):
         if store:
             self._marshal.store()
         
-    def load_metadata(self, fromtarget=True):
+    def load_metadata(self, fromname=False):
         """ """
-        if fromtarget and self.has_target():
-            dictmetadata = self.marshal.get_target_metadataquery(self.target)
+        if fromname and self.has_name():
+            dictmetadata = self.marshal.get_target_metadataquery(self.name)
         else:
             dictmetadata = self.marshal.get_metadataquery(*self._radec, *self._jdrange, size=0.01)
             
@@ -116,22 +117,22 @@ class ZTFTarget( object ):
         if hasattr(self,"_radec") and not forcetarget:
             return self._radec
         
-        if len( np.atleast_1d(self.target) )==1:
-            if self.target in TARGET_IO["name"].values:
-                return TARGET_IO[TARGET_IO["name"]==self.target][
+        if len( np.atleast_1d(self.name) )==1:
+            if self.name in TARGET_IO["name"].values:
+                return TARGET_IO[TARGET_IO["name"]==self.name][
                     ["%s_ra"%use,"%s_dec"%use]].values[0]
             
-            return self.marshal.get_target_coordinates(self.target).values[0]
-        return self.marshal.get_target_coordinates(self.target).values
+            return self.marshal.get_target_coordinates(self.name).values[0]
+        return self.marshal.get_target_coordinates(self.name).values
 
     def get_jdrange(self, forcetarget=False):
         """ """
         if hasattr(self,"_jdrange") and not forcetarget:
             return self._jdrange
         
-        if len( np.atleast_1d(self.target) )==1:
-            return self.marshal.get_target_jdrange(self.target)
-        return self.marshal.get_target_jdrange(self.target)
+        if len( np.atleast_1d(self.name) )==1:
+            return self.marshal.get_target_jdrange(self.name)
+        return self.marshal.get_target_jdrange(self.name)
     
     # Others 
     def get_diffimg_forcepsf_filepath(self, exists=True, indexes=None):
@@ -171,12 +172,12 @@ class ZTFTarget( object ):
         return self._marshal
     
     @property
-    def target(self):
+    def name(self):
         """ """
-        if not self.has_target():
-            raise AttributeError("Target not loaded. See set_target()")
-        return self._target
+        if not self.has_name():
+            raise AttributeError("Target not loaded. See set_name()")
+        return self._name
     
-    def has_target(self):
+    def has_name(self):
         """ Test if the current instance has a target set """
-        return hasattr(self,"_target") and self._target is not None
+        return hasattr(self,"_name") and self._name is not None
