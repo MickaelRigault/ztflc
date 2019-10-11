@@ -126,6 +126,7 @@ class ForcePhotometry():
         """ """
         # - Figure
         if ax is None:
+            import matplotlib.pyplot as mpl
             fig = mpl.figure()
             ax = fig.add_subplot(111)
         else:
