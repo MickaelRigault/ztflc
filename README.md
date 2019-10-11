@@ -33,9 +33,15 @@ fp.run_forcefit(verbose=True)
 ```
 Once the force photometry has run, data are stored as:
 ```python 
-fp.fp.data_forcefit
+fp.data_forcefit
 ```
 and use `fp.show_lc()` to plot the lightcurve.
+
+To store the `date_forcefit`, simply do:
+```python 
+fp.store()
+```
+the dataframe will be store in `$ZTFDATA/forcephotometry/name.csv` (c.f. `ztfquery` for `$ZTFDATA`). you can also directly provide the filename if you want to dataframe stored elsewhere `fp.store(filename)`.
 
 
 ### Example 2, from ztf target name:
