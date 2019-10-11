@@ -54,8 +54,19 @@ fp = forcephotometry.ForcePhotometry.from_name(ZTF18aaaaaaa)
 
 the code will use `ztfquery.marshal` to recover the information you need (ra, dec jdmin, jdmax).
 
+# Storing or updating marshal data .
 
-# Downloading the file you need.
+You can store ztf mashal target information locally using `ztfquery`. For instance, if you want to store the "Cosmology" program, simply do:
+
+```python 
+from ztfquery import marshal
+m = marshal.MarshalAccess()
+m.load_target_sources("Cosmology")
+m.store()
+```
+Once you did that, the code will use the locally stored data when you use `forcephotometry.ForcePhotometry.from_name(ZTF18aaaaaaa)`
+
+# Downloading the files you need.
 
 The first time you are going to run the forcephotometry for a given target, you most likely need to download the associated data. For instance for `ZTF18aaaaaaa`
 
