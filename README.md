@@ -15,6 +15,11 @@ If you have used `ztflc` for a research you are publishing, please **include the
 _"The ztflc code was funded by the European Research Council (ERC) under the European Union's Horizon 2020 research and innovation programme (grant agreement n°759194 - USNAC, PI: Rigault)."_
 
 # Usage
+### First time using `ztflc`
+
+1) You may want to make sure `$ZTFDATA` is defined (see [ztfquery](https://github.com/MickaelRigault/ztfquery).)
+2) You should first run *Storing or updating marshal data.* for your marshal's science program.
+
 
 ### Example 1, force photometry from coordinates: 
 
@@ -54,7 +59,7 @@ fp = forcephotometry.ForcePhotometry.from_name(ZTF18aaaaaaa)
 
 the code will use `ztfquery.marshal` to recover the information you need (ra, dec jdmin, jdmax).
 
-# Storing or updating marshal data .
+# Storing or updating marshal data.
 
 You can store ztf mashal target information locally using `ztfquery`. For instance, if you want to store the "Cosmology" program, simply do:
 
