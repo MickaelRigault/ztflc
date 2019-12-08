@@ -71,7 +71,7 @@ class ZTFTarget( object ):
         if source == "local":
             self._marshal = marshal.MarshalAccess.load_local(program)
         else:
-            self.update_marshal()
+            self.update_marshal(program=program)
 
     def update_marshal(self, program="Cosmology", store=True):
         """ """
