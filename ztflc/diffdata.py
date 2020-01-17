@@ -88,9 +88,10 @@ class DiffData():
     # ------- #
     # GETTER  #
     # ------- #
-    def get_main_info(self):
+    def get_main_info(self, backup_value=None):
         """ """
-        header = {k.lower():self.header[k] for k in self._main_columns}
+        header = {k.lower():self.header[k] if k in self.header else backup_value
+                  for k in self._main_columns}
         header["target_x"], header["target_y"] = self.target_position
         return header
     

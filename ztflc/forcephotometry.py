@@ -36,7 +36,7 @@ class ForcePhotometry():
     def from_coords(cls, ra, dec, jdmin=None, jdmax=None,  name="unknown"):
         """ Load the ForcePhotometry from Target Name """
         from .io import ZTFTarget
-        return cls(ZTFTarget.from_coords(ra, dec, jdmin=jdmin, jdmax=jdmax))
+        return cls(ZTFTarget.from_coords(ra, dec, jdmin=jdmin, jdmax=jdmax, name=name))
         
     # =============== #
     #   Method        #
