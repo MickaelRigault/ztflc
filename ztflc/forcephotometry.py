@@ -90,10 +90,14 @@ class ForcePhotometry():
             if has_nan and no_badsub:
                 print("NaNs in the image, skipped")
             else:
-                fitresults = diffdata.fit_flux()
-                datainfo   = diffdata.get_main_info()
-                dataout[i] = {**fitresults,**datainfo}
-                dataout[i]["data_hasnan"] = has_nan
+                 try:
+                    fitresults = diffdata.fit_flux()
+                    datainfo   = diffdata.get_main_info()
+                    dataout[i] = {**fitresults,**datainfo}
+                    dataout[i]["data_hasnan"] = has_nan
+                except ValueError:
+                    warnings.warn("Shape of diffimg and psfimg do not correspond (index: %d). Skipping."%(i))
+                    pass
             del diffdata
             gc.collect()
             
