@@ -90,7 +90,7 @@ class ForcePhotometry():
             if has_nan and no_badsub:
                 print("NaNs in the image, skipped")
             else:
-                 try:
+                try:
                     fitresults = diffdata.fit_flux()
                     datainfo   = diffdata.get_main_info()
                     dataout[i] = {**fitresults,**datainfo}
