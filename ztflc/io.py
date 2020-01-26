@@ -138,10 +138,13 @@ class ZTFTarget( object ):
         return self.marshal.get_target_jdrange(self.name)
     
     # Others 
-    def get_diffimg_forcepsf_filepath(self, exists=True, indexes=None):
-        """ """
-        diffimg = self.get_diffimg_filepath(exists=exists, indexes=indexes)
-        diffpsf = self.get_diffpsf_filepath(exists=exists, indexes=indexes)
+    def get_diffimg_forcepsf_filepath(self, exists=True, indexes=None, **kwargs):
+        """ 
+        **kwargs eventually goes to ztfquery.Query.get_local_data()
+                 -> filecheck=True, ignore_warnings=False, etc.
+        """
+        diffimg = self.get_diffimg_filepath(exists=exists, indexes=indexes, **kwargs)
+        diffpsf = self.get_diffpsf_filepath(exists=exists, indexes=indexes, **kwargs)
         out = []
         for diff in diffimg:
             expected_psf = diff.replace("scimrefdiffimg.fits.fz", "diffimgpsf.fits")
@@ -151,13 +154,19 @@ class ZTFTarget( object ):
                 out.append([diff, expected_psf])
         return out
 
-    def get_diffimg_filepath(self, exists=True, indexes=None):
-        """ """
-        return self.zquery.get_local_data("scimrefdiffimg.fits.fz", exists=exists, indexes=indexes)
+    def get_diffimg_filepath(self, exists=True, indexes=None, **kwargs):
+        """ 
+        **kwargs goes to ztfquery.Query.get_local_data()
+                 -> filecheck=True, ignore_warnings=False, etc.
+        """
+        return self.zquery.get_local_data("scimrefdiffimg.fits.fz", exists=exists, indexes=indexes, **kwargs)
 
-    def get_diffpsf_filepath(self, exists=True, indexes=None):
-        """ """
-        return self.zquery.get_local_data("diffimgpsf.fits", exists=exists, indexes=indexes)
+    def get_diffpsf_filepath(self, exists=True, indexes=None, **kwargs):
+        """ 
+        **kwargs goes to ztfquery.Query.get_local_data()
+                 -> filecheck=True, ignore_warnings=False, etc.
+        """
+        return self.zquery.get_local_data("diffimgpsf.fits", exists=exists, indexes=indexes, **kwargs)
     
     # ================ #
     #  Properties      #

@@ -6,13 +6,14 @@ import numpy as np
 from .diffdata import DiffData
 
 
-def run_forcephotometry(target, download_files=True, nprocess=4, verbose=True, **kwargs):
+def run_forcephotometry(target, download_files=True, nprocess=4, verbose=True,
+                        filecheck=True, ignore_warnings=False,  **kwargs):
     """ """
     fp = ForcePhotometry.from_name(target)
     fp.load_metadata()
     if download_files:
         fp.io.download_data(nprocess=nprocess)
-    fp.load_filepathes()
+    fp.load_filepathes(filecheck=filecheck, ignore_warnings=ignore_warnings)
     fp.run_forcefit(update_diffdata=False,verbose=verbose, **kwargs)
     
     
@@ -50,8 +51,12 @@ class ForcePhotometry():
             self.io.load_marshal(**kwargs)
         self.io.load_metadata()
 
-    def load_filepathes(self,  **kwargs):
-        """ """
+    def load_filepathes(self, **kwargs):
+        """ 
+        **kwargs eventually goes to ztfquery.Query.get_local_data()
+                 -> exists=True, indexes=None, filecheck=True, ignore_warnings=False, etc.
+
+        """
         self._filepathes = self.io.get_diffimg_forcepsf_filepath(**kwargs)
         self._diffdata = None
 
