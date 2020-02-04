@@ -103,8 +103,9 @@ class ForcePhotometry():
                     bar.update(index_count)
 
             for dataout in dataout_list:
-                dataout = pandas.Series(dataout, index=dataout_df.columns)
-                dataout_df = dataout_df.append(dataout, ignore_index=True)        
+                if dataout is not None:
+                    dataout = pandas.Series(dataout, index=dataout_df.columns)
+                    dataout_df = dataout_df.append(dataout, ignore_index=True)
             self._data_forcefit = dataout_df
             if store:
                 self.store()
@@ -180,8 +181,8 @@ class ForcePhotometry():
                 dataout = {**fitresults,**datainfo}
                 dataout["data_hasnan"] = has_nan
             except ValueError:
-                warnings.warn("Shape of diffimg and psfimg do not correspond (index: %d). Skipping."%(i))
-                pass
+                warnings.warn("Shape of diffimg and psfimg do not correspond (index: %d). Skipping."%(index))
+                return None
         del diffdata
         gc.collect()
         return dataout
