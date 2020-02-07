@@ -90,7 +90,7 @@ class ForcePhotometry():
         _verbose = [verbose]*index_count
 
         if nprocess > 1:
-            dataout_df = pandas.DataFrame(columns=['sigma', 'sigma.err', 'ampl', 'ampl.err', 'fval', 'chi2', 'chi2dof', 'filename', 'humidity', 'filter', 'obsmjd', 'ccdid', 'amp_id', 'gain', 'readnoi', 'darkcur', 'magzp', 'magzpunc', 'magzprms', 'clrcoeff', 'clrcounc', 'zpclrcov', 'zpmed', 'zpavg', 'zprmsall', 'clrmed', 'clravg', 'clrrms', 'qid', 'rcid', 'seeing', 'maglim', 'status', 'filterid', 'fieldid', 'target_x', 'target_y', 'data_hasnan'])
+            dataout_df = pandas.DataFrame(columns=['sigma', 'sigma.err', 'ampl', 'ampl.err', 'fval', 'chi2', 'chi2dof', 'filename', 'humidity', 'filter', 'obsmjd', 'ccdid', 'amp_id', 'gain', 'readnoi', 'darkcur', 'magzp', 'magzpunc', 'magzprms', 'clrcoeff', 'clrcounc', 'zpclrcov', 'zpmed', 'zpavg', 'zprmsall', 'clrmed', 'clravg', 'clrrms', 'qid', 'rcid', 'seeing', 'maglim', 'status', 'filterid', 'fieldid', 'moonalt', 'moonillf', 'target_x', 'target_y', 'data_hasnan'])
             bar = ProgressBar(index_count)
             dataout_list = []
 
