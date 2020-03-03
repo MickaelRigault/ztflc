@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import os
 import pandas
 import numpy as np
 import warnings, multiprocessing
@@ -78,6 +79,14 @@ class ForcePhotometry():
         if indexes is None:
             indexes = np.arange(self.nsources)
 
+        from .io import LOCALDATA
+        # Try to load previous fit results
+        try:
+            path_previous_results = os.path.join(LOCALDATA, "{}.csv".format(self.io.name))
+            previous_results = pandas.read_csv(path_previous_results, float_precision='round_trip')
+        except FileNotFoundError:
+            previous_results = pandas.DataFrame(columns=['filename'])
+
         dataout = {}
         if verbose:
             print("Starting run_forcefit() for %d image differences"%len(indexes))
@@ -88,6 +97,7 @@ class ForcePhotometry():
         _update_diffdata = [update_diffdata]*index_count
         _no_badsub = [no_badsub]*index_count
         _verbose = [verbose]*index_count
+        _previous_results = [previous_results]*index_count
 
         if nprocess > 1:
             dataout_df = pandas.DataFrame(columns=['sigma', 'sigma.err', 'ampl', 'ampl.err', 'fval', 'chi2', 'chi2dof', 'filename', 'humidity', 'filter', 'obsmjd', 'ccdid', 'amp_id', 'gain', 'readnoi', 'darkcur', 'magzp', 'magzpunc', 'magzprms', 'clrcoeff', 'clrcounc', 'zpclrcov', 'zpmed', 'zpavg', 'zprmsall', 'clrmed', 'clravg', 'clrrms', 'qid', 'rcid', 'seeing', 'maglim', 'status', 'filterid', 'fieldid', 'moonalt', 'moonillf', 'target_x', 'target_y', 'data_hasnan'])
@@ -95,7 +105,7 @@ class ForcePhotometry():
             dataout_list = []
 
             with multiprocessing.Pool(nprocess) as p:
-                for j, dataout in enumerate(p.imap_unordered(self.get_ith_diffdata_multiprocess, zip(indexes, self.filepathes, _coords, _update_diffdata, _no_badsub, _verbose))):
+                for j, dataout in enumerate(p.imap_unordered(self.get_ith_diffdata_multiprocess, zip(indexes, self.filepathes, _coords, _update_diffdata, _no_badsub, _verbose, _previous_results))):
                     if bar is not None:
                         bar.update(j)
                     dataout_list.append(dataout)
@@ -110,25 +120,42 @@ class ForcePhotometry():
             if store:
                 self.store()
 
-        else:
-            for i in indexes:            
+        else:            
+            for i in indexes:    
                 if verbose:
                     print("running %d "%i)
                     print(self.filepathes[i][0].split("/")[-1])
-                diffdata = self.get_ith_diffdata(i, update=update_diffdata)
-                has_nan = np.any(np.isnan(diffdata.diffimg))
-                if has_nan and no_badsub:
-                    print("NaNs in the image, skipped")
+
+                # Check for each index if there is already a result present in dataframe
+                # Use this result if present, fit otherwise
+                filename_modified = self.filepathes[i][0].split("/")[-1][:-26] + ".fits"
+                query = previous_results.query('filename == @filename_modified')
+
+                if len(query) == 1:
+                    query = query.to_dict('r')[0]
+
+                if len(query) == 40:
+                    if verbose:
+                        print("not fitting %d "%i)
+                    dataout[i] = query
+
                 else:
-                    try:
-                        fitresults = diffdata.fit_flux()
-                        datainfo   = diffdata.get_main_info()
-                        dataout[i] = {**fitresults,**datainfo}
-                        dataout[i]["data_hasnan"] = has_nan
-                    except ValueError:
-                        warnings.warn("Shape of diffimg and psfimg do not correspond (index: %d). Skipping."%(i))
-                        pass
-                del diffdata
+                    if verbose:
+                        print("fitting %d "%i)
+                    diffdata = self.get_ith_diffdata(i, update=update_diffdata)
+                    has_nan = np.any(np.isnan(diffdata.diffimg))
+                    if has_nan and no_badsub:
+                        print("NaNs in the image, skipped")
+                    else:
+                        try:
+                            fitresults = diffdata.fit_flux()
+                            datainfo   = diffdata.get_main_info()
+                            dataout[i] = {**fitresults,**datainfo}
+                            dataout[i]["data_hasnan"] = has_nan
+                        except ValueError:
+                            warnings.warn("Shape of diffimg and psfimg do not correspond (index: %d). Skipping."%(i))
+                            pass
+                    del diffdata
                 gc.collect()
             
             self._data_forcefit = pandas.DataFrame(dataout).T
@@ -166,24 +193,41 @@ class ForcePhotometry():
     @staticmethod
     def get_ith_diffdata_multiprocess(args):
         import gc
-        index, filepath, coords, update_diffdata, no_badsub, verbose = args
-        if verbose:
-            print("running %d "%index)
-            print(filepath[0].split("/")[-1])
-        diffdata = DiffData(*filepath, coords)
-        has_nan = np.any(np.isnan(diffdata.diffimg))
-        if has_nan and no_badsub:
-            print("NaNs in the image, skipped")
+
+        index, filepath, coords, update_diffdata, no_badsub, verbose, previous_results = args
+        # Check for each index if there is already a result present in dataframe
+        # Use this result if present, fit otherwise
+        
+        filename_modified = filepath[0].split("/")[-1][:-26] + ".fits"
+        query = previous_results.query('filename == @filename_modified')
+
+        if len(query) == 1:
+            query = query.to_dict('r')[0]
+
+        if len(query) == 40:
+            if verbose:
+                print("not fitting %d "%i)
+            dataout = query
+
         else:
-            try:
-                fitresults = diffdata.fit_flux()
-                datainfo   = diffdata.get_main_info()
-                dataout = {**fitresults,**datainfo}
-                dataout["data_hasnan"] = has_nan
-            except ValueError:
-                warnings.warn("Shape of diffimg and psfimg do not correspond (index: %d). Skipping."%(index))
-                return None
-        del diffdata
+            if verbose:
+                print("fitting %d "%i)
+                print(filepath[0].split("/")[-1])
+            diffdata = DiffData(*filepath, coords)
+            has_nan = np.any(np.isnan(diffdata.diffimg))
+            if has_nan and no_badsub:
+                print("NaNs in the image, skipped")
+            else:
+                try:
+                    fitresults = diffdata.fit_flux()
+                    datainfo   = diffdata.get_main_info()
+                    dataout = {**fitresults,**datainfo}
+                    dataout["data_hasnan"] = has_nan
+                except ValueError:
+                    warnings.warn("Shape of diffimg and psfimg do not correspond (index: %d). Skipping."%(index))
+                    return None
+            del diffdata
+
         gc.collect()
         return dataout
             
