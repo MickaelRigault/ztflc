@@ -206,12 +206,12 @@ class ForcePhotometry():
 
         if len(query) == 40:
             if verbose:
-                print("not fitting %d "%i)
+                print("not fitting %d "%index)
             dataout = query
 
         else:
             if verbose:
-                print("fitting %d "%i)
+                print("fitting %d "%index)
                 print(filepath[0].split("/")[-1])
             diffdata = DiffData(*filepath, coords)
             has_nan = np.any(np.isnan(diffdata.diffimg))
