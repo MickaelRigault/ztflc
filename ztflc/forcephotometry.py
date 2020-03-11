@@ -73,7 +73,7 @@ class ForcePhotometry():
     # FITTER   #
     # -------- #
     def run_forcefit(self, indexes=None, update_diffdata=False,
-                     store=False, verbose=True, no_badsub=False, nprocess=4):
+                     store=False, verbose=True, no_badsub=False, force_refit=False, nprocess=4):
         """ """
         import gc
         if indexes is None:
@@ -98,6 +98,7 @@ class ForcePhotometry():
         _no_badsub = [no_badsub]*index_count
         _verbose = [verbose]*index_count
         _previous_results = [previous_results]*index_count
+        _force_refit = [force_refit]*index_count
 
         if nprocess > 1:
             dataout_df = pandas.DataFrame(columns=['sigma', 'sigma.err', 'ampl', 'ampl.err', 'fval', 'chi2', 'chi2dof', 'filename', 'humidity', 'filter', 'obsmjd', 'ccdid', 'amp_id', 'gain', 'readnoi', 'darkcur', 'magzp', 'magzpunc', 'magzprms', 'clrcoeff', 'clrcounc', 'zpclrcov', 'zpmed', 'zpavg', 'zprmsall', 'clrmed', 'clravg', 'clrrms', 'qid', 'rcid', 'seeing', 'maglim', 'status', 'filterid', 'fieldid', 'moonalt', 'moonillf', 'target_x', 'target_y', 'data_hasnan'])
@@ -105,7 +106,7 @@ class ForcePhotometry():
             dataout_list = []
 
             with multiprocessing.Pool(nprocess) as p:
-                for j, dataout in enumerate(p.imap_unordered(self.get_ith_diffdata_multiprocess, zip(indexes, self.filepathes, _coords, _update_diffdata, _no_badsub, _verbose, _previous_results))):
+                for j, dataout in enumerate(p.imap_unordered(self.get_ith_diffdata_multiprocess, zip(indexes, self.filepathes, _coords, _update_diffdata, _no_badsub, _verbose, _previous_results, _force_refit))):
                     if bar is not None:
                         bar.update(j)
                     dataout_list.append(dataout)
@@ -126,12 +127,13 @@ class ForcePhotometry():
                     print("running %d "%i)
                     print(self.filepathes[i][0].split("/")[-1])
 
-                # Check for each index if there is already a result present in dataframe
-                # Use this result if present, fit otherwise
                 filename_modified = self.filepathes[i][0].split("/")[-1][:-26] + ".fits"
                 query = previous_results.query('filename == @filename_modified')
 
-                if len(query) == 1:
+                # Check for each index if there is already a result present in dataframe [len(query)==40]
+                # Use this result if present, fit otherwise
+
+                if len(query) == 1 or force_refit:
                     query = query.to_dict('r')[0]
 
                 if len(query) == 40:
@@ -194,14 +196,14 @@ class ForcePhotometry():
     def get_ith_diffdata_multiprocess(args):
         import gc
 
-        index, filepath, coords, update_diffdata, no_badsub, verbose, previous_results = args
+        index, filepath, coords, update_diffdata, no_badsub, verbose, previous_results, force_refit = args
         # Check for each index if there is already a result present in dataframe
         # Use this result if present, fit otherwise
         
         filename_modified = filepath[0].split("/")[-1][:-26] + ".fits"
         query = previous_results.query('filename == @filename_modified')
 
-        if len(query) == 1:
+        if len(query) == 1 or force_refit:
             query = query.to_dict('r')[0]
 
         if len(query) == 40:
