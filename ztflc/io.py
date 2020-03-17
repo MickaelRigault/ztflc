@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 
+import os
 import numpy as np
 import pandas
 from astropy.io import fits
@@ -10,13 +11,15 @@ from ztfquery import query, marshal
 from ztfquery.io import LOCALSOURCE
 LOCALDATA = LOCALSOURCE+"forcephotometry/"
 
-import os
 if os.path.isfile(LOCALSOURCE+"/externaldata/target_position.csv"):
-    TARGET_IO = pandas.read_csv(LOCALSOURCE+"/externaldata/target_position.csv")
+    TARGET_IO = pandas.read_csv(
+        LOCALSOURCE+"/externaldata/target_position.csv")
 else:
-    TARGET_IO = pandas.DataFrame(columns=["name", "mean_ra","mean_dec","median_ra","median_dec"])
+    TARGET_IO = pandas.DataFrame(
+        columns=["name", "mean_ra", "mean_dec", "median_ra", "median_dec"])
 
-class ZTFTarget( object ):
+
+class ZTFTarget(object):
     """ """
 
     # ================ #
@@ -41,7 +44,7 @@ class ZTFTarget( object ):
         this.set_jdrange(jdmin, jdmax)
         this.set_name(name)
         return this
-    
+
     # ================ #
     #  Methods         #
     # ================ #
@@ -57,15 +60,15 @@ class ZTFTarget( object ):
         """ provide the coordinate.
         Get them using self.get_coordinate().
         """
-        self._radec = [ra,dec]
+        self._radec = [ra, dec]
 
     def set_jdrange(self, jdmin, jdmax):
         """ """
         self._jdrange = [jdmin, jdmax]
-        
+
     # ------- #
     # LOADDER #
-    # ------- #    
+    # ------- #
     def load_marshal(self, source="local", program="Cosmology"):
         """ """
         if source == "local":
@@ -79,22 +82,23 @@ class ZTFTarget( object ):
         self._marshal.load_target_sources(program)
         if store:
             self._marshal.store()
-        
+
     def load_metadata(self, fromname=False):
         """ """
         if self.has_radec() and not fromname:
-            dictmetadata = self.marshal.get_metadataquery(*self.radec, *self.jdrange, size=0.01)
+            dictmetadata = self.marshal.get_metadataquery(
+                *self.radec, *self.jdrange, size=0.01)
         elif self.has_name():
             dictmetadata = self.marshal.get_target_metadataquery(self.name)
         else:
-            raise AttributeError("Cannot load the metadata, no self.name and no _radec")
-            
-            
+            raise AttributeError(
+                "Cannot load the metadata, no self.name and no _radec")
+
         self.zquery.load_metadata(**dictmetadata)
 
-    def download_data(self, which=["scimrefdiffimg.fits.fz","diffimgpsf.fits"],
-                          nprocess=4, **kwargs ):
-        """ 
+    def download_data(self, which=["scimrefdiffimg.fits.fz", "diffimgpsf.fits"],
+                      nprocess=4, **kwargs):
+        """
 
         **kwargs goes to zquery.download_data()
               - source='IRSA',
@@ -109,9 +113,10 @@ class ZTFTarget( object ):
               **kwargs
         """
         for suffix in np.atleast_1d(which):
-            self.zquery.download_data(suffix, nprocess=nprocess, **{**{"show_progress":False},
-                                                                    **kwargs})
-        
+            self.zquery.download_data(suffix, nprocess=nprocess,
+                                      **{**{"show_progress": False},
+                                         **kwargs})
+
     # ------- #
     # GETTER  #
     # ------- #
@@ -119,35 +124,38 @@ class ZTFTarget( object ):
         """ """
         if self.has_radec() and not forcename:
             return self.radec
-        
-        if len( np.atleast_1d(self.name) )==1:
+
+        if len(np.atleast_1d(self.name)) == 1:
             if self.name in TARGET_IO["name"].values:
-                return TARGET_IO[TARGET_IO["name"]==self.name][
-                    ["%s_ra"%use,"%s_dec"%use]].values[0]
-            
+                return TARGET_IO[TARGET_IO["name"] == self.name][
+                    ["%s_ra" % use, "%s_dec" % use]].values[0]
+
             return self.marshal.get_target_coordinates(self.name).values[0]
         return self.marshal.get_target_coordinates(self.name).values
 
     def get_jdrange(self, forcetarget=False):
         """ """
-        if hasattr(self,"_jdrange") and not forcetarget:
+        if hasattr(self, "_jdrange") and not forcetarget:
             return self._jdrange
-        
-        if len( np.atleast_1d(self.name) )==1:
+
+        if len(np.atleast_1d(self.name)) == 1:
             return self.marshal.get_target_jdrange(self.name)
         return self.marshal.get_target_jdrange(self.name)
-    
-    # Others 
+
+    # Others
     def get_diffimg_forcepsf_filepath(self, exists=True, indexes=None, **kwargs):
-        """ 
+        """
         **kwargs eventually goes to ztfquery.Query.get_local_data()
                  -> filecheck=True, ignore_warnings=False, etc.
         """
-        diffimg = self.get_diffimg_filepath(exists=exists, indexes=indexes, **kwargs)
-        diffpsf = self.get_diffpsf_filepath(exists=exists, indexes=indexes, **kwargs)
+        diffimg = self.get_diffimg_filepath(
+            exists=exists, indexes=indexes, **kwargs)
+        diffpsf = self.get_diffpsf_filepath(
+            exists=exists, indexes=indexes, **kwargs)
         out = []
         for diff in diffimg:
-            expected_psf = diff.replace("scimrefdiffimg.fits.fz", "diffimgpsf.fits")
+            expected_psf = diff.replace(
+                "scimrefdiffimg.fits.fz", "diffimgpsf.fits")
             if expected_psf not in diffpsf:
                 out.append([diff, None])
             else:
@@ -155,19 +163,23 @@ class ZTFTarget( object ):
         return out
 
     def get_diffimg_filepath(self, exists=True, indexes=None, **kwargs):
-        """ 
+        """
         **kwargs goes to ztfquery.Query.get_local_data()
                  -> filecheck=True, ignore_warnings=False, etc.
         """
-        return self.zquery.get_local_data("scimrefdiffimg.fits.fz", exists=exists, indexes=indexes, **kwargs)
+        return self.zquery.get_local_data("scimrefdiffimg.fits.fz",
+                                          exists=exists, indexes=indexes,
+                                          **kwargs)
 
     def get_diffpsf_filepath(self, exists=True, indexes=None, **kwargs):
-        """ 
+        """
         **kwargs goes to ztfquery.Query.get_local_data()
                  -> filecheck=True, ignore_warnings=False, etc.
         """
-        return self.zquery.get_local_data("diffimgpsf.fits", exists=exists, indexes=indexes, **kwargs)
-    
+        return self.zquery.get_local_data("diffimgpsf.fits",
+                                          exists=exists, indexes=indexes,
+                                          **kwargs)
+
     # ================ #
     #  Properties      #
     # ================ #
@@ -179,10 +191,10 @@ class ZTFTarget( object ):
     @property
     def marshal(self):
         """ """
-        if not hasattr(self,"_marshal"):
+        if not hasattr(self, "_marshal"):
             raise AttributeError("Marshal not loaded. See load_marshal()")
         return self._marshal
-    
+
     @property
     def name(self):
         """ """
@@ -203,11 +215,11 @@ class ZTFTarget( object ):
         if not self.has_radec():
             return None
         return self._radec
-    
+
     def has_name(self):
         """ Test if the current instance has a target set """
-        return hasattr(self,"_name") and self._name is not None
-    
+        return hasattr(self, "_name") and self._name is not None
+
     def has_radec(self):
         """ """
         return hasattr(self, "_radec") and self._radec is not None
