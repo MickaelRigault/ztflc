@@ -130,16 +130,18 @@ class ForcePhotometry():
                 filename_modified = self.filepathes[i][0].split("/")[-1][:-26] + ".fits"
                 query = previous_results.query('filename == @filename_modified')
 
-                # Check for each index if there is already a result present in dataframe [len(query)==40]
-                # Use this result if present, fit otherwise
+                # Check query of dataframe. If it is 40 characters long, this datapoint has already been fitted
+                # and will not be fitted again (but it WILL be fitted again if force_refit is True)
 
-                if len(query) == 1 or force_refit:
-                    query = query.to_dict('r')[0]
+                # Parse the query to a dictionary to check if it is 40 characters long or not
+                if len(query) == 1:
+                    querydict = query.to_dict('r')[0]
 
-                if len(query) == 40:
+                # Now do the actual check
+                if len(querydict) == 40 and not force_refit:
                     if verbose:
                         print("not fitting %d "%i)
-                    dataout[i] = query
+                    dataout[i] = querydict
 
                 else:
                     if verbose:
@@ -197,19 +199,24 @@ class ForcePhotometry():
         import gc
 
         index, filepath, coords, update_diffdata, no_badsub, verbose, previous_results, force_refit = args
-        # Check for each index if there is already a result present in dataframe
-        # Use this result if present, fit otherwise
         
         filename_modified = filepath[0].split("/")[-1][:-26] + ".fits"
         query = previous_results.query('filename == @filename_modified')
 
-        if len(query) == 1 or force_refit:
-            query = query.to_dict('r')[0]
+        # Check query of dataframe. If it is 40 characters long, this datapoint has already been fitted
+        # and will not be fitted again (but it WILL be fitted again if force_refit is True)
 
-        if len(query) == 40:
+        # Parse the query to a dictionary to check if it is 40 characters long or not
+        if len(query) == 1:
+            querydict = query.to_dict('r')[0]
+
+        # Now do the actual check
+        force_refit = True
+
+        if len(querydict) == 40 and not force_refit:
             if verbose:
                 print("not fitting %d "%index)
-            dataout = query
+            dataout = querydict
 
         else:
             if verbose:
