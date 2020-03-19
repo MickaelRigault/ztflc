@@ -20,7 +20,7 @@ class DiffData():
     # ------- #
     # FITTER  #
     # ------- #
-    def fit_flux(self, fp):
+    def fit_flux(self):
         """ """
         from .fitter import DiffImgFitter
         from astropy.stats import mad_std

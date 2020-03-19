@@ -152,9 +152,7 @@ class ForcePhotometry():
                         print("NaNs in the image, skipped")
                     else:
                         try:
-                            # Gave new argument in fit_flux to print the path
-                            # from /sci: easier to find files
-                            fitresults = diffdata.fit_flux(self.filepathes[i][0].split('sci/')[-1])
+                            fitresults = diffdata.fit_flux()
                             datainfo   = diffdata.get_main_info()
                             dataout[i] = {**fitresults,**datainfo}
                             dataout[i]["data_hasnan"] = has_nan
@@ -230,9 +228,7 @@ class ForcePhotometry():
                 print("NaNs in the image, skipped")
             else:
                 try:
-                    # Gave new argument in fit_flux to print the path
-                    # from /sci: easier to find files
-                    fitresults = diffdata.fit_flux(filepath[0].split('sci/')[-1])
+                    fitresults = diffdata.fit_flux()
                     datainfo   = diffdata.get_main_info()
                     dataout = {**fitresults,**datainfo}
                     dataout["data_hasnan"] = has_nan
