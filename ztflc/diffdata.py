@@ -20,7 +20,7 @@ class DiffData():
     # ------- #
     # FITTER  #
     # ------- #
-    def fit_flux(self, fp):
+    def fit_flux(self):
         """ """
         from .fitter import DiffImgFitter
         from astropy.stats import mad_std
@@ -39,10 +39,6 @@ class DiffData():
         fit_prop["sigma_boundaries"] = [
             robust_nmad/10., np.nanstd(self.fitter.data)*2]
 
-        # Print filepath given by forcephotometry.run_forcefit to print both
-        # the path and the values: easier to associate wrong values with
-        # affected diffimg
-        print(fp)
         print(fit_prop)
 
         # Return fitter output
