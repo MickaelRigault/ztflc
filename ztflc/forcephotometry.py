@@ -19,7 +19,6 @@ def run_forcephotometry(target, download_files=True, nprocess=4, verbose=True,
     fp.run_forcefit(update_diffdata=False,verbose=verbose, **kwargs)
 
 
-
 class ForcePhotometry():
     """ """
     # =============== #
@@ -66,14 +65,15 @@ class ForcePhotometry():
         """ """
         if filename is None:
             from .io import LOCALDATA
-            filename = LOCALDATA+"/%s.csv"%self.io.name
+            filename = LOCALDATA+"/%s.csv" %self.io.name
         self._data_forcefit.to_csv(filename, index=False)
 
     # -------- #
     # FITTER   #
     # -------- #
     def run_forcefit(self, indexes=None, update_diffdata=False,
-                     store=False, verbose=True, no_badsub=False, force_refit=False, nprocess=4):
+                     store=False, verbose=True, no_badsub=False,
+                     force_refit=False, nprocess=4):
         """ """
         import gc
         if indexes is None:
@@ -152,9 +152,7 @@ class ForcePhotometry():
                         print("NaNs in the image, skipped")
                     else:
                         try:
-                            # Gave new argument in fit_flux to print the path
-                            # from /sci: easier to find files
-                            fitresults = diffdata.fit_flux(self.filepathes[i][0].split('sci/')[-1])
+                            fitresults = diffdata.fit_flux()
                             datainfo   = diffdata.get_main_info()
                             dataout[i] = {**fitresults,**datainfo}
                             dataout[i]["data_hasnan"] = has_nan
@@ -200,8 +198,9 @@ class ForcePhotometry():
     def get_ith_diffdata_multiprocess(args):
         import gc
 
-        index, filepath, coords, update_diffdata, no_badsub, verbose, previous_results, force_refit = args
-        
+        index, filepath, coords, update_diffdata, no_badsub,\
+            verbose, previous_results, force_refit = args
+
         filename_modified = filepath[0].split("/")[-1][:-26] + ".fits"
         query = previous_results.query('filename == @filename_modified')
 
@@ -223,16 +222,13 @@ class ForcePhotometry():
         else:
             if verbose:
                 print("fitting %d "%index)
-                #print(filepath[0].split("sci/")[-1])
             diffdata = DiffData(*filepath, coords)
             has_nan = np.any(np.isnan(diffdata.diffimg))
             if has_nan and no_badsub:
                 print("NaNs in the image, skipped")
             else:
                 try:
-                    # Gave new argument in fit_flux to print the path
-                    # from /sci: easier to find files
-                    fitresults = diffdata.fit_flux(filepath[0].split('sci/')[-1])
+                    fitresults = diffdata.fit_flux()
                     datainfo   = diffdata.get_main_info()
                     dataout = {**fitresults,**datainfo}
                     dataout["data_hasnan"] = has_nan
