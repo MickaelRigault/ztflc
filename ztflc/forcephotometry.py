@@ -135,13 +135,13 @@ class ForcePhotometry():
 
                 # Parse the query to a dictionary to check if it is 40 characters long or not
                 if len(query) == 1:
-                    querydict = query.to_dict('r')[0]
+                    query = query.to_dict('r')[0]
 
                 # Now do the actual check
-                if len(querydict) == 40 and not force_refit:
+                if len(query) == 40 and not force_refit:
                     if verbose:
                         print("not fitting %d "%i)
-                    dataout[i] = querydict
+                    dataout[i] = query
 
                 else:
                     if verbose:
@@ -208,15 +208,15 @@ class ForcePhotometry():
 
         # Parse the query to a dictionary to check if it is 40 characters long or not
         if len(query) == 1:
-            querydict = query.to_dict('r')[0]
+            query = query.to_dict('r')[0]
 
         # Now do the actual check
         force_refit = True
 
-        if len(querydict) == 40 and not force_refit:
+        if len(query) == 40 and not force_refit:
             if verbose:
                 print("not fitting %d "%index)
-            dataout = querydict
+            dataout = query
 
         else:
             if verbose:
