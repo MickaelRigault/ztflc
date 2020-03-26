@@ -2,14 +2,21 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
-from astropy.io import fits
+from astropy import wcs
 from scipy import stats
+from scipy import ndimage
+from astropy.io import fits
+import matplotlib.pyplot as mpl
+from astropy.stats import mad_std
+from .fitter import DiffImgFitter
+from matplotlib.patches import Circle
 
 
 class DiffData():
     """ """
 
-    def __init__(self, diffimgpath, psfimgpath, coords, inpixels=False, clean=True):
+    def __init__(self, diffimgpath, psfimgpath, coords,
+                 inpixels=False, clean=True):
         """ """
         self.set_data(diffimgpath, psfimgpath, coords,
                       inpixels=inpixels, clean=clean)
@@ -22,8 +29,6 @@ class DiffData():
     # ------- #
     def fit_flux(self):
         """ """
-        from .fitter import DiffImgFitter
-        from astropy.stats import mad_std
         # Load the fitter
         self.fitter = DiffImgFitter(self.diffimg, self.psfimg,
                                     0,
@@ -31,11 +36,13 @@ class DiffData():
 
         # Load the fitter
         robust_nmad = mad_std(self.fitter.data[~np.isnan(self.fitter.data)])
-        fit_prop = {"ampl_guess": np.nanmax(self.fitter.data)*(np.sqrt(2*np.pi*2**2)),  # 2 sigma guess
-                    "sigma_guess": robust_nmad
-                    }
-        fit_prop["ampl_boundaires"] = [-2*np.nanmin(self.fitter.data)*(np.sqrt(2*np.pi*2**2)),
-                                       5*np.nanmax(self.fitter.data)*(np.sqrt(2*np.pi*2**2))]
+        fit_prop = {"ampl_guess": np.nanmax(self.fitter.data) *
+                    (np.sqrt(2*np.pi*2**2)),  # 2 sigma guess
+                    "sigma_guess": robust_nmad}
+        fit_prop["ampl_boundaires"] = [-2*np.nanmin(self.fitter.data) *
+                                       (np.sqrt(2*np.pi*2**2)),
+                                       5*np.nanmax(self.fitter.data) *
+                                       (np.sqrt(2*np.pi*2**2))]
         fit_prop["sigma_boundaries"] = [
             robust_nmad/10., np.nanstd(self.fitter.data)*2]
 
@@ -50,11 +57,6 @@ class DiffData():
     def set_data(self, diffimgpath, psfimgpath, coords, inpixels=False,
                  clean=True, **kwargs):
         """ """
-        from astropy import wcs
-        from astropy.io import fits
-        from scipy import ndimage
-        from astropy.stats import mad_std
-
         self._xy = coords if inpixels else None
         #
         # Handeling too many open files
@@ -87,12 +89,12 @@ class DiffData():
             self._diffimg = self._datatmp[ymin:ymax, xmin:xmax].copy()
             self._diffimg_targetpos = self._xy - [xmin, ymin]
 
-        if clean:
-            self._iscleaned = True
-            flagout = self._diffimg < -mad_std(self._diffimg)*10
-            self._diffimg[flagout] = np.NaN
-        else:
-            self._iscleaned = False
+        # if clean:
+        #     self._iscleaned = True
+        #     flagout = self._diffimg < -mad_std(self._diffimg)*10
+        #     self._diffimg[flagout] = np.NaN
+        # else:
+        #     self._iscleaned = False
 
         self._psf_shift = self._diffimg_targetpos - \
             np.asarray(self.psfshape)/2+0.5
@@ -105,7 +107,9 @@ class DiffData():
     # ------- #
     def get_main_info(self, backup_value=None):
         """ """
-        header = {k.lower(): self.header[k] if k in self.header else backup_value
+        header = {k.lower(): self.header[k]
+                  if k in self.header
+                  else backup_value
                   for k in self._main_columns}
         header["target_x"], header["target_y"] = self.target_position
         return header
@@ -118,7 +122,8 @@ class DiffData():
         from astropy.stats import mad_std
 
         circle = geometry.Point(*self.target_position).buffer(buffer)
-        pixelsout, flagbuffer = self.grid_diffimg.get_pixels_in(circle, invert=True)
+        pixelsout, flagbuffer = self.grid_diffimg.get_pixels_in(circle,
+                                                                invert=True)
 
         dataout = self.grid_diffimg.geodataframe[flagbuffer]["data"]
         self.noise_data = {"flagnoise":flagbuffer,
@@ -129,8 +134,10 @@ class DiffData():
                             "buffer":buffer,
                             }
 
-        self.noise_data["mean.err"] = self.noise_data["nmad"]/np.sqrt(len(dataout)-1)
-        self.noise_data["p(zero)"]  = stats.norm.pdf(self.noise_data["mean"], loc=0, scale=self.noise_data["mean.err"])
+        self.noise_data["mean.err"] = self.noise_data["nmad"]/
+                                      np.sqrt(len(dataout)-1)
+        self.noise_data["p(zero)"]  = stats.norm.pdf(self.noise_data["mean"],
+                                      loc=0, scale=self.noise_data["mean.err"])
         self.noise_data["differr"]  = self.noise_data[use]
         return self.noise_data["differr"]
         """
@@ -140,7 +147,6 @@ class DiffData():
     # ------- #
     def show(self):
         """ """
-        import matplotlib.pyplot as mpl
         fig = mpl.figure(figsize=[8, 3])
         prop = dict(origin="lower")  # vmin=-20,vmax=60)
 
@@ -163,27 +169,33 @@ class DiffData():
 
     def show_noise(self, ax=None):
         """ """
-        import matplotlib.pyplot as mpl
-        from matplotlib.patches import Circle
         fig = mpl.figure(figsize=[9, 3])
         axleft = fig.add_axes([0.05, 0.12, 0.3, 0.8], frameon=False)
         ax = fig.add_axes([0.4, 0.12, 0.45, 0.78])
 
-        dataout = self.grid_diffimg.geodataframe[self.noise_data["flagnoise"]]["data"]
-        datain = self.grid_diffimg.geodataframe[~self.noise_data["flagnoise"]]["data"]
+        dataout = self.grid_diffimg.geodataframe[
+            self.noise_data["flagnoise"]]["data"]
+        datain = self.grid_diffimg.geodataframe[
+            ~self.noise_data["flagnoise"]]["data"]
 
         _ = self.grid_diffimg.show("data", ax=axleft, lw=0)
         axleft.add_patch(Circle(
-            self.target_position, self.noise_data["buffer"], facecolor="None", edgecolor="C1", lw=2))
+            self.target_position,
+            self.noise_data["buffer"],
+            facecolor="None", edgecolor="C1", lw=2))
         axleft.scatter(*self.target_position, marker="x", color="C1", s=80)
 
         range = [int(self.noise_data["median"]-5*self.noise_data["nmad"]),
                  int(self.noise_data["median"]+5*self.noise_data["nmad"])]
-        ax.hist(dataout, density=True, range=range, bins=15, facecolor="C0", histtype="step", fill=True, alpha=0.4,
+        ax.hist(dataout, density=True, range=range,
+                bins=15, facecolor="C0", histtype="step",
+                fill=True, alpha=0.4,
                 label="out data")
         ax.hist(dataout, density=True, range=range, bins=15,
                 edgecolor="C0", histtype="step", lw=2)
-        ax.hist(datain, histtype="step", density=True, range=[range[0], range[1]*2], bins=20, color="C1", lw=2,
+        ax.hist(datain, histtype="step", density=True,
+                range=[range[0], range[1]*2], bins=20,
+                color="C1", lw=2,
                 label="in data")
 
         mean, std = np.mean(dataout), np.std(dataout)
@@ -201,7 +213,7 @@ class DiffData():
     # ================ #
     #
     # Data Image
-    #
+
     @property
     def diffimg(self):
         """ Difference data patch around the target. """
@@ -251,7 +263,9 @@ class DiffData():
     @property
     def _main_columns(self):
         """ """
-        return ["FILENAME", "HUMIDITY", "FILTER", "OBSMJD", "CCDID", "AMP_ID", "GAIN", "READNOI", "DARKCUR",
-                "MAGZP", "MAGZPUNC", "MAGZPRMS", "CLRCOEFF", "CLRCOUNC", "ZPCLRCOV", "ZPMED", "ZPAVG",
-                "ZPRMSALL", "CLRMED", "CLRAVG", "CLRRMS", "QID", "RCID", "SEEING", "MAGLIM", "STATUS",
-                "FILTERID", "FILTER", "FIELDID", "MOONALT", "MOONILLF"]
+        return ["FILENAME", "HUMIDITY", "FILTER", "OBSMJD", "CCDID", "AMP_ID",
+                "GAIN", "READNOI", "DARKCUR", "MAGZP", "MAGZPUNC", "MAGZPRMS",
+                "CLRCOEFF", "CLRCOUNC", "ZPCLRCOV", "ZPMED", "ZPAVG",
+                "ZPRMSALL", "CLRMED", "CLRAVG", "CLRRMS", "QID", "RCID",
+                "SEEING", "MAGLIM", "STATUS", "FILTERID", "FILTER", "FIELDID",
+                "MOONALT", "MOONILLF"]

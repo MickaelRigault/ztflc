@@ -3,10 +3,9 @@
 
 
 import os
-import numpy as np
 import pandas
+import numpy as np
 from astropy.io import fits
-
 from ztfquery import query, marshal
 from ztfquery.io import LOCALSOURCE
 LOCALDATA = LOCALSOURCE+"forcephotometry/"
