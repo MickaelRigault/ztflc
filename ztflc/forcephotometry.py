@@ -183,7 +183,7 @@ class ForcePhotometry():
                     else:
                         try:
                             fitresults = diffdata.fit_flux()
-                            datainfo   = diffdata.get_main_info()
+                            datainfo = diffdata.get_main_info()
                             dataout[i] = {**fitresults, **datainfo}
                             dataout[i]["data_hasnan"] = has_nan
                         except ValueError:
@@ -262,7 +262,7 @@ class ForcePhotometry():
             else:
                 try:
                     fitresults = diffdata.fit_flux()
-                    datainfo   = diffdata.get_main_info()
+                    datainfo = diffdata.get_main_info()
                     dataout = {**fitresults, **datainfo}
                     dataout["data_hasnan"] = has_nan
                 except ValueError:
@@ -275,10 +275,10 @@ class ForcePhotometry():
         gc.collect()
         return dataout
 
-
     # --------- #
     #  PLOTTER  #
     # --------- #
+
     def show_lc(self, ax=None, scalezp=25, reference=False, **kwargs):
         """ """
         # - Figure
@@ -288,7 +288,7 @@ class ForcePhotometry():
         else:
             fig = ax.figure
 
-        x, y, err = self.data_forcefit[["obsmjd","ampl","ampl.err"]].values.T
+        x, y, err = self.data_forcefit[["obsmjd", "ampl", "ampl.err"]].values.T
         f0coef = 10**(-(self.data_forcefit["magzp"]-scalezp)/2.5)\
             if scalezp is not None else 1
 
@@ -350,4 +350,3 @@ class ForcePhotometry():
                 self._diffdata = None
 
         return self._diffdata
-
