@@ -247,8 +247,6 @@ class ForcePhotometry():
             query = query.to_dict('r')[0]
 
         # Now do the actual check
-        force_refit = True
-
         if len(query) == 40 and not force_refit:
             if verbose:
                 print("not fitting %d " % index)
