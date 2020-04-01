@@ -320,8 +320,6 @@ class ForcePhotometry:
                 print(filepath[0].split("/")[-1])
             diffdata = DiffData(*filepath, coords)
             has_nan = np.any(np.isnan(diffdata.diffimg))
-            print(has_nan)
-            print(no_badsub)
             if has_nan and no_badsub:
                 print("NaNs in the image, skipped")
                 return None
