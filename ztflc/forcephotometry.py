@@ -139,9 +139,10 @@ class ForcePhotometry():
 
             for dataout_i in dataout_list:
                 if dataout_i is not None:
-                    dataout = pandas.Series(dataout_i,
-                                            index=dataout_df.columns)
-                    dataout_df = dataout_df.append(dataout, ignore_index=True)
+                    dataout_i = pandas.Series(dataout_i,
+                                              index=dataout_df.columns)
+                    dataout_df = dataout_df.append(dataout_i,
+                                                   ignore_index=True)
             self._data_forcefit = dataout_df
             if store:
                 self.store()
@@ -155,7 +156,8 @@ class ForcePhotometry():
 
                 filename_modified = self.filepathes[i][0].split("/")[-1][:-26]\
                     + ".fits"
-                query = previous_results.query('filename == @filename_modified')
+                query = previous_results.query(
+                    'filename == @filename_modified')
 
                 # Check query of dataframe. If it is 40 characters long,
                 # this datapoint has already been fitted
@@ -180,6 +182,7 @@ class ForcePhotometry():
                     has_nan = np.any(np.isnan(diffdata.diffimg))
                     if has_nan and no_badsub:
                         print("NaNs in the image, skipped")
+                        return None
                     else:
                         try:
                             fitresults = diffdata.fit_flux()
@@ -259,6 +262,7 @@ class ForcePhotometry():
             has_nan = np.any(np.isnan(diffdata.diffimg))
             if has_nan and no_badsub:
                 print("NaNs in the image, skipped")
+                return None
             else:
                 try:
                     fitresults = diffdata.fit_flux()

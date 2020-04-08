@@ -15,11 +15,12 @@ from matplotlib.patches import Circle
 class DiffData():
     """ """
 
-    def __init__(self, diffimgpath, psfimgpath, coords,
-                 inpixels=False, clean=True):
+    def __init__(self,
+                 diffimgpath, psfimgpath, maskimgpath,
+                 coords, inpixels=False):
         """ """
-        self.set_data(diffimgpath, psfimgpath, coords,
-                      inpixels=inpixels, clean=clean)
+        self.set_data(diffimgpath, psfimgpath, maskimgpath, coords,
+                      inpixels=inpixels)
 
     # ================ #
     #    Methods       #
@@ -30,7 +31,7 @@ class DiffData():
     def fit_flux(self):
         """ """
         # Load the fitter
-        self.fitter = DiffImgFitter(self.diffimg, self.psfimg,
+        self.fitter = DiffImgFitter(self.diffimg, self.psfimg, self.mask,
                                     0,
                                     shape=self.psfshape)
 
@@ -54,8 +55,10 @@ class DiffData():
     # ------- #
     # SETTER  #
     # ------- #
-    def set_data(self, diffimgpath, psfimgpath, coords, inpixels=False,
-                 clean=True, **kwargs):
+    def set_data(self,
+                 diffimgpath, psfimgpath, maskimgpath,
+                 coords, inpixels=False,
+                 **kwargs):
         """ """
         self._xy = coords if inpixels else None
         #
@@ -64,6 +67,12 @@ class DiffData():
         # PSF
         with fits.open(psfimgpath) as psf:
             self._psfimg_raw = psf[0].data.copy()
+
+        with fits.open(maskimgpath) as mask:
+            self._maskimg_raw = mask[0].data.copy()
+            self.mask_array = self._maskimg_raw == 0
+            # maskimg = (self._maskimg_raw & 0)
+            # mask = (maskimg == 0)
 
         with fits.open(diffimgpath) as fdiff:
             # x,y position
@@ -80,21 +89,16 @@ class DiffData():
             # copy the data
             self._datatmp = fdiff[1].data.copy()
             self._header = fdiff[1].header.copy()
-            # change all outsider values to nan
+            # change all outsider values to False
             mean_pix = np.mean(np.ravel(self._datatmp))
             std_pix = mad_std(np.ravel(self._datatmp))
-            mask = np.abs(self._datatmp) > np.abs(mean_pix + 10*std_pix)
+            threshold = np.abs(self._datatmp) > np.abs(mean_pix + 10*std_pix)
+            ## TO BE CONTINUED HERE!!!
+            self.threshold_array = self._datatmp
             self._datatmp[mask] = np.nan
             # actual part of the diffimg used to fit
             self._diffimg = self._datatmp[ymin:ymax, xmin:xmax].copy()
             self._diffimg_targetpos = self._xy - [xmin, ymin]
-
-        # if clean:
-        #     self._iscleaned = True
-        #     flagout = self._diffimg < -mad_std(self._diffimg)*10
-        #     self._diffimg[flagout] = np.NaN
-        # else:
-        #     self._iscleaned = False
 
         self._psf_shift = self._diffimg_targetpos - \
             np.asarray(self.psfshape)/2+0.5

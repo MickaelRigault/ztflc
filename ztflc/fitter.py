@@ -23,9 +23,9 @@ class DiffImgFitter(object):
              "    return self.get_chi2(parameters)\n")
         return obj
 
-    def __init__(self, diffimg, psfimg, diffvar=None, shape=None):
+    def __init__(self, diffimg, psfimg, mask, diffvar=None, shape=None):
         """ """
-        self.set_data(diffimg, psfimg, diffvar=diffvar, shape=shape)
+        self.set_data(diffimg, psfimg, mask, diffvar=diffvar, shape=shape)
 
     # ============== #
     #   FITTER       #
@@ -80,7 +80,7 @@ class DiffImgFitter(object):
     # SETTER   #
     # -------- #
 
-    def set_data(self, diffimg, psfimg, diffvar=None, shape=None):
+    def set_data(self, diffimg, psfimg, mask, diffvar=None, shape=None):
         """ """
         if np.shape(diffimg) != np.shape(psfimg):
             raise ValueError(
@@ -98,10 +98,11 @@ class DiffImgFitter(object):
             self.diffvar = 0
 
         self._inputshape = np.shape(diffimg)
-        self.data = np.ravel(diffimg)
+        self.data = np.ravel(mask*diffimg)
         self.flagout = np.isnan(self.data)
-        self.profile = np.ravel(psfimg)
+        self.profile = np.ravel(mask*psfimg)
         self._shape = shape
+        self.mask = mask
 
     def set_parameters(self, param):
         """ """
@@ -116,7 +117,8 @@ class DiffImgFitter(object):
             self.set_parameters(param)
 
         if simple_chi2:
-            return np.nansum((self.data-self.scaled_model)**2/self.variance_tot)
+            return np.nansum(self.mask*(self.data-self.scaled_model)**2
+                             /self.variance_tot)
 
         if not use_prior:
             return -2*np.nansum(self.get_loglikelihood())
