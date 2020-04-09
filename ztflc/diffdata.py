@@ -16,48 +16,28 @@ class DiffData():
     """ """
 
     def __init__(self,
-                 diffimgpath, psfimgpath, maskimgpath,
-                 coords, inpixels=False):
+                 diffimgpath, psfimgpath,
+                 coords,
+                 maskimgpath=None,
+                 inpixels=False):
         """ """
-        self.set_data(diffimgpath, psfimgpath, maskimgpath, coords,
+        self.set_data(diffimgpath, psfimgpath,
+                      coords,
+                      maskimgpath=maskimgpath,
                       inpixels=inpixels)
 
-    # ================ #
-    #    Methods       #
-    # ================ #
-    # ------- #
-    # FITTER  #
-    # ------- #
-    def fit_flux(self):
-        """ """
-        # Load the fitter
-        self.fitter = DiffImgFitter(self.diffimg, self.psfimg, self.mask,
-                                    0,
-                                    shape=self.psfshape)
+    # =================================================================== #
+    #                               Methods                               #
+    # =================================================================== #
 
-        # Load the fitter
-        robust_nmad = mad_std(self.fitter.data[~np.isnan(self.fitter.data)])
-        fit_prop = {"ampl_guess": np.nanmax(self.fitter.data) *
-                    (np.sqrt(2*np.pi*2**2)),  # 2 sigma guess
-                    "sigma_guess": robust_nmad}
-        fit_prop["ampl_boundaires"] = [-2*np.nanmin(self.fitter.data) *
-                                       (np.sqrt(2*np.pi*2**2)),
-                                       5*np.nanmax(self.fitter.data) *
-                                       (np.sqrt(2*np.pi*2**2))]
-        fit_prop["sigma_boundaries"] = [
-            robust_nmad/10., np.nanstd(self.fitter.data)*2]
+    # ------------------------------------------------------------------- #
+    #                               SETTER                                #
+    # ------------------------------------------------------------------- #
 
-        print(fit_prop)
-
-        # Return fitter output
-        return self.fitter.fit(**fit_prop)
-
-    # ------- #
-    # SETTER  #
-    # ------- #
     def set_data(self,
-                 diffimgpath, psfimgpath, maskimgpath,
-                 coords, inpixels=False,
+                 diffimgpath, psfimgpath,
+                 coords,
+                 maskimgpath, inpixels=False,
                  **kwargs):
         """ """
         self._xy = coords if inpixels else None
@@ -68,11 +48,12 @@ class DiffData():
         with fits.open(psfimgpath) as psf:
             self._psfimg_raw = psf[0].data.copy()
 
-        with fits.open(maskimgpath) as mask:
-            self._maskimg_raw = mask[0].data.copy()
-            self.mask_array = self._maskimg_raw == 0
-            # maskimg = (self._maskimg_raw & 0)
-            # mask = (maskimg == 0)
+        if maskimgpath is not None:
+            with fits.open(maskimgpath) as mask:
+                self._maskimg_raw = mask[0].data.copy()
+                self.mask_array = self._maskimg_raw == 0
+                # maskimg = (self._maskimg_raw & 0)
+                # mask = (maskimg == 0)
 
         with fits.open(diffimgpath) as fdiff:
             # x,y position
@@ -106,9 +87,39 @@ class DiffData():
         self._psfimg = ndimage.interpolation.shift(
             self._psfimg_raw, self._psf_shift[::-1], order=5)
 
-    # ------- #
-    # GETTER  #
-    # ------- #
+    # ------------------------------------------------------------------- #
+    #                               FITTER                                #
+    # ------------------------------------------------------------------- #
+
+    def fit_flux(self):
+        """ """
+        # Load the fitter
+        self.fitter = DiffImgFitter(self.diffimg, self.psfimg,
+                                    self.mask,
+                                    0,
+                                    shape=self.psfshape)
+
+        # Load the fitter
+        robust_nmad = mad_std(self.fitter.data[~np.isnan(self.fitter.data)])
+        fit_prop = {"ampl_guess": np.nanmax(self.fitter.data) *
+                    (np.sqrt(2*np.pi*2**2)),  # 2 sigma guess
+                    "sigma_guess": robust_nmad}
+        fit_prop["ampl_boundaires"] = [-2*np.nanmin(self.fitter.data) *
+                                       (np.sqrt(2*np.pi*2**2)),
+                                       5*np.nanmax(self.fitter.data) *
+                                       (np.sqrt(2*np.pi*2**2))]
+        fit_prop["sigma_boundaries"] = [
+            robust_nmad/10., np.nanstd(self.fitter.data)*2]
+
+        print(fit_prop)
+
+        # Return fitter output
+        return self.fitter.fit(**fit_prop)
+
+    # ------------------------------------------------------------------- #
+    #                               GETTER                                #
+    # ------------------------------------------------------------------- #
+
     def get_main_info(self, backup_value=None):
         """ """
         header = {k.lower(): self.header[k]
@@ -146,9 +157,10 @@ class DiffData():
         return self.noise_data["differr"]
         """
 
-    # ------- #
-    # PLOTTER #
-    # ------- #
+    # ------------------------------------------------------------------- #
+    #                              PLOTTER                                #
+    # ------------------------------------------------------------------- #
+
     def show(self):
         """ """
         fig = mpl.figure(figsize=[8, 3])
@@ -212,11 +224,14 @@ class DiffData():
                  self.estimated_noise, va="top", ha="left")
 
         ax.legend()
-    # ================ #
-    #  Properties      #
-    # ================ #
-    #
-    # Data Image
+
+    # =================================================================== #
+    #                             PROPERTIES                              #
+    # =================================================================== #
+
+    # ------------------------------------------------------------------- #
+    #                              Data img                               #
+    # ------------------------------------------------------------------- #
 
     @property
     def diffimg(self):
@@ -244,9 +259,10 @@ class DiffData():
         """ shape of the psf image """
         return np.shape(self.psfimg_raw)
 
-    #
-    # target
-    #
+    # ------------------------------------------------------------------- #
+    #                                Target                               #
+    # ------------------------------------------------------------------- #
+
     @property
     def target_position(self):
         """ """
@@ -254,9 +270,10 @@ class DiffData():
             self._xy = None
         return self._xy
 
-    #
-    # Additional information
-    #
+    # ------------------------------------------------------------------- #
+    #                        Additional information                       #
+    # ------------------------------------------------------------------- #
+
     @property
     def header(self):
         """ Data header"""
