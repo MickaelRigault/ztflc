@@ -4,21 +4,24 @@
 DESCRIPTION = "ztflc: Force photometry lc fitter"
 LONG_DESCRIPTION = """ Force photometry lc fitter"""
 
-DISTNAME = 'ztflc'
-AUTHOR = 'Mickael Rigault'
-MAINTAINER = 'Mickael Rigault' 
-MAINTAINER_EMAIL = 'm.rigault@ipnl.in2p3.fr'
-URL = 'https://github.com/MickaelRigault/ztflc/'
-LICENSE = 'BSD (3-clause)'
-DOWNLOAD_URL = 'https://github.com/MickaelRigault/ztflc/tarball/0.2'
-VERSION = '0.2.2'
+DISTNAME = "ztflc"
+AUTHOR = "Mickael Rigault"
+MAINTAINER = "Mickael Rigault"
+MAINTAINER_EMAIL = "m.rigault@ipnl.in2p3.fr"
+URL = "https://github.com/MickaelRigault/ztflc/"
+LICENSE = "BSD (3-clause)"
+DOWNLOAD_URL = "https://github.com/MickaelRigault/ztflc/tarball/0.2"
+VERSION = "0.2.2"
 
 try:
     from setuptools import setup, find_packages
+
     _has_setuptools = True
 except ImportError:
     from distutils.core import setup
+
     _has_setuptools = False
+
 
 def check_dependencies():
     install_requires = []
@@ -29,14 +32,15 @@ def check_dependencies():
     try:
         import ztfquery
     except ImportError:
-        install_requires.append('ztfquery')
+        install_requires.append("ztfquery")
 
     try:
         import pandas
     except ImportError:
-        install_requires.append('pandas')
-        
+        install_requires.append("pandas")
+
     return install_requires
+
 
 if __name__ == "__main__":
 
@@ -47,31 +51,33 @@ if __name__ == "__main__":
         print(packages)
     else:
         # This should be updated if new submodules are added
-        packages = ['ztflc']
+        packages = ["ztflc"]
 
-    setup(name=DISTNAME,
-          author=AUTHOR,
-          author_email=MAINTAINER_EMAIL,
-          maintainer=MAINTAINER,
-          maintainer_email=MAINTAINER_EMAIL,
-          description=DESCRIPTION,
-          long_description=LONG_DESCRIPTION,
-          license=LICENSE,
-          url=URL,
-          version=VERSION,
-          download_url=DOWNLOAD_URL,
-          install_requires=install_requires,
-          scripts=["bin/forcephoto.py"],
-          packages=packages,
-          include_package_data=True,
-          #package_data={'pysedm': ['data/*.*']},
-          classifiers=[
-              'Intended Audience :: Science/Research',
-              'Programming Language :: Python :: 2.7',
-              'Programming Language :: Python :: 3.5',              
-              'License :: OSI Approved :: BSD License',
-              'Topic :: Scientific/Engineering :: Astronomy',
-              'Operating System :: POSIX',
-              'Operating System :: Unix',
-              'Operating System :: MacOS'],
-      )
+    setup(
+        name=DISTNAME,
+        author=AUTHOR,
+        author_email=MAINTAINER_EMAIL,
+        maintainer=MAINTAINER,
+        maintainer_email=MAINTAINER_EMAIL,
+        description=DESCRIPTION,
+        long_description=LONG_DESCRIPTION,
+        license=LICENSE,
+        url=URL,
+        version=VERSION,
+        download_url=DOWNLOAD_URL,
+        install_requires=install_requires,
+        scripts=["bin/forcephoto.py"],
+        packages=packages,
+        include_package_data=True,
+        # package_data={'pysedm': ['data/*.*']},
+        classifiers=[
+            "Intended Audience :: Science/Research",
+            "Programming Language :: Python :: 2.7",
+            "Programming Language :: Python :: 3.5",
+            "License :: OSI Approved :: BSD License",
+            "Topic :: Scientific/Engineering :: Astronomy",
+            "Operating System :: POSIX",
+            "Operating System :: Unix",
+            "Operating System :: MacOS",
+        ],
+    )
