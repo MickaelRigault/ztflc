@@ -7,10 +7,11 @@ import pandas
 import warnings
 import numpy as np
 import multiprocessing
+import matplotlib.pyplot as mpl
+
 from .io import ZTFTarget
 from .io import LOCALDATA
 from .diffdata import DiffData
-import matplotlib.pyplot as mpl
 from astropy.utils.console import ProgressBar
 
 
@@ -27,9 +28,11 @@ def run_forcephotometry(target, download_files=True, nprocess=4, verbose=True,
 
 class ForcePhotometry():
     """ """
-    # =============== #
-    #    Init         #
-    # =============== #
+
+    # =================================================================== #
+    #                               Initial                               #
+    # =================================================================== #
+
     def __init__(self, ztftarget):
         """ """
         self.io = ztftarget
@@ -46,12 +49,13 @@ class ForcePhotometry():
                                          jdmin=jdmin, jdmax=jdmax,
                                          name=name))
 
-    # =============== #
-    #   Method        #
-    # =============== #
-    # -------- #
-    # LOADDER  #
-    # -------- #
+    # =================================================================== #
+    #                               Methods                               #
+    # =================================================================== #
+
+    # ------------------------------------------------------------------- #
+    #                               LOADER                                #
+    # ------------------------------------------------------------------- #
 
     def load_metadata(self, **kwargs):
         """ """
@@ -59,14 +63,15 @@ class ForcePhotometry():
             self.io.load_marshal(**kwargs)
         self.io.load_metadata()
 
-    def load_filepathes(self, **kwargs):
-        """
-        **kwargs eventually goes to ztfquery.Query.get_local_data()
+    def load_filepathes(self, load_mask=False, **kwargs):
+        """**kwargs eventually goes to ztfquery.Query.get_local_data()
                  -> exists=True, indexes=None,
-                 filecheck=True, ignore_warnings=False, etc.
-
-        """
-        self._filepathes = self.io.get_diffimg_forcepsf_filepath(**kwargs)
+                 filecheck=True, ignore_warnings=False, etc."""
+        if load_mask:
+            self._filepathes = self.io.get_diffimg_forcepsf_maskimg_filepath(
+                **kwargs)
+        else:
+            self._filepathes = self.io.get_diffimg_forcepsf_filepath(**kwargs)
         self._diffdata = None
 
     def store(self, filename=None):
@@ -75,9 +80,9 @@ class ForcePhotometry():
             filename = LOCALDATA+"/%s.csv" % self.io.name
         self._data_forcefit.to_csv(filename, index=False)
 
-    # -------- #
-    # FITTER   #
-    # -------- #
+    # ------------------------------------------------------------------- #
+    #                               FITTER                                #
+    # ------------------------------------------------------------------- #
 
     def run_forcefit(self, indexes=None, update_diffdata=False,
                      store=False, verbose=True, no_badsub=False,
@@ -279,9 +284,9 @@ class ForcePhotometry():
         gc.collect()
         return dataout
 
-    # --------- #
-    #  PLOTTER  #
-    # --------- #
+    # ------------------------------------------------------------------- #
+    #                              PLOTTER                                #
+    # ------------------------------------------------------------------- #
 
     def show_lc(self, ax=None, scalezp=25, reference=False, **kwargs):
         """ """
@@ -311,9 +316,9 @@ class ForcePhotometry():
         ax.axhline(0, ls="--", color="0.5")
         return ax
 
-    # =============== #
-    #  Properties     #
-    # =============== #
+    # =================================================================== #
+    #                             PROPERTIES                              #
+    # =================================================================== #
 
     @property
     def data_forcefit(self):
@@ -340,7 +345,7 @@ class ForcePhotometry():
             self.load_filepathes()
         return self._filepathes
 
-    def had_filepathes(self):
+    def has_filepathes(self):
         """ """
         return hasattr(self, "_filepathes") and self._filepathes is not None
 

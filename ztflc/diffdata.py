@@ -2,11 +2,12 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
+import matplotlib.pyplot as mpl
+
 from astropy import wcs
 from scipy import stats
 from scipy import ndimage
 from astropy.io import fits
-import matplotlib.pyplot as mpl
 from astropy.stats import mad_std
 from .fitter import DiffImgFitter
 from matplotlib.patches import Circle
@@ -15,16 +16,16 @@ from matplotlib.patches import Circle
 class DiffData():
     """ """
 
+    # =================================================================== #
+    #                               Initial                               #
+    # =================================================================== #
+
     def __init__(self,
-                 diffimgpath, psfimgpath,
-                 coords,
-                 maskimgpath=None,
-                 inpixels=False):
+                 diffimgpath, psfimgpath, maskimgpath,
+                 coords, inpixels=False):
         """ """
-        self.set_data(diffimgpath, psfimgpath,
-                      coords,
-                      maskimgpath=maskimgpath,
-                      inpixels=inpixels)
+        self.set_data(diffimgpath, psfimgpath, maskimgpath,
+                      coords, inpixels=inpixels)
 
     # =================================================================== #
     #                               Methods                               #
@@ -35,25 +36,27 @@ class DiffData():
     # ------------------------------------------------------------------- #
 
     def set_data(self,
-                 diffimgpath, psfimgpath,
-                 coords,
-                 maskimgpath, inpixels=False,
+                 diffimgpath, psfimgpath, maskimgpath,
+                 coords, inpixels=False,
                  **kwargs):
         """ """
         self._xy = coords if inpixels else None
-        #
+
         # Handeling too many open files
-        #
+
         # PSF
         with fits.open(psfimgpath) as psf:
             self._psfimg_raw = psf[0].data.copy()
 
+        # Maskimg
         if maskimgpath is not None:
             with fits.open(maskimgpath) as mask:
                 self._maskimg_raw = mask[0].data.copy()
                 self.mask_array = self._maskimg_raw == 0
-                # maskimg = (self._maskimg_raw & 0)
-                # mask = (maskimg == 0)
+
+        # sets the total mask to threshold_array only
+        else:
+            self.mask_array = True
 
         with fits.open(diffimgpath) as fdiff:
             # x,y position
@@ -73,13 +76,13 @@ class DiffData():
             # change all outsider values to False
             mean_pix = np.mean(np.ravel(self._datatmp))
             std_pix = mad_std(np.ravel(self._datatmp))
-            threshold = np.abs(self._datatmp) > np.abs(mean_pix + 10*std_pix)
-            ## TO BE CONTINUED HERE!!!
-            self.threshold_array = self._datatmp
-            self._datatmp[mask] = np.nan
+            self.threshold_array = np.abs(self._datatmp) > \
+                np.abs(mean_pix + 10*std_pix)
             # actual part of the diffimg used to fit
             self._diffimg = self._datatmp[ymin:ymax, xmin:xmax].copy()
             self._diffimg_targetpos = self._xy - [xmin, ymin]
+
+        self.mask = self.mask_array * self.threshold_array
 
         self._psf_shift = self._diffimg_targetpos - \
             np.asarray(self.psfshape)/2+0.5
@@ -94,10 +97,8 @@ class DiffData():
     def fit_flux(self):
         """ """
         # Load the fitter
-        self.fitter = DiffImgFitter(self.diffimg, self.psfimg,
-                                    self.mask,
-                                    0,
-                                    shape=self.psfshape)
+        self.fitter = DiffImgFitter(self.diffimg, self.psfimg, self.mask,
+                                    0, shape=self.psfshape)
 
         # Load the fitter
         robust_nmad = mad_std(self.fitter.data[~np.isnan(self.fitter.data)])

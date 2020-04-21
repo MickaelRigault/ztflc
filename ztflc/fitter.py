@@ -2,24 +2,49 @@
 # -*- coding: utf-8 -*-
 
 
-import numpy as np
-from scipy import stats
 import warnings
+import numpy as np
+import matplotlib.pyplot as mpl
+
+from scipy import stats
 from iminuit import Minuit
 
-from .utils import make_method
+
+def make_method(obj):
+    """Decorator to make the function a method of *obj*.
+
+    In the current context::
+      @make_method(Axes)
+      def toto(ax, ...):
+          ...
+    makes *toto* a method of `Axes`, so that one can directly use::
+      ax.toto()
+    COPYRIGHT: from Yannick Copin
+    """
+
+    def decorate(f):
+        setattr(obj, f.__name__, f)
+        return f
+
+    return decorate
 
 
 class DiffImgFitter(object):
     """ """
     FREEPARAMETERS = ["sigma", "ampl"]
 
+    # =================================================================== #
+    #                               Initial                               #
+    # =================================================================== #
+
     def __new__(cls, *arg, **kwargs):
         """ """
         obj = super(DiffImgFitter, cls).__new__(cls)
         exec("@make_method(DiffImgFitter)\n" +
-             "def _minuit_chi2_(self,%s): \n" % (", ".join(obj.FREEPARAMETERS)) +
-             "    parameters = %s \n" % (", ".join(obj.FREEPARAMETERS)) +
+             "def _minuit_chi2_(self,%s): \n"
+             % (", ".join(obj.FREEPARAMETERS)) +
+             "    parameters = %s \n"
+             % (", ".join(obj.FREEPARAMETERS)) +
              "    return self.get_chi2(parameters)\n")
         return obj
 
@@ -27,9 +52,13 @@ class DiffImgFitter(object):
         """ """
         self.set_data(diffimg, psfimg, mask, diffvar=diffvar, shape=shape)
 
-    # ============== #
-    #   FITTER       #
-    # ============== #
+    # =================================================================== #
+    #                               Methods                               #
+    # =================================================================== #
+
+    # ------------------------------------------------------------------- #
+    #                               FITTER                                #
+    # ------------------------------------------------------------------- #
 
     def fit(self, **kwargs):
         """ """
@@ -67,18 +96,20 @@ class DiffImgFitter(object):
         minuit_kwargs = {}
         for param in self.FREEPARAMETERS:
             minuit_kwargs[param] = kwargs.get(
-                "%s_guess" % param, 0 if not 'sigma' in param else 1)
+                "%s_guess" % param, 0 if 'sigma' not in param else 1)
             minuit_kwargs["limit_"+param] = kwargs.get(
-                "%s_boundaries" % param, None if not 'sigma' in param else [0, None])
+                "%s_boundaries" % param, None if 'sigma' not in param
+                else [0, None])
             minuit_kwargs["fix_"+param] = kwargs.get("%s_fixed" % param, False)
 
         self._minuit_input = minuit_kwargs
         self.minuit = Minuit(self._minuit_chi2_,
                              print_level=print_level, errordef=step,
                              **minuit_kwargs)
-    # -------- #
-    # SETTER   #
-    # -------- #
+
+    # ------------------------------------------------------------------- #
+    #                               SETTER                                #
+    # ------------------------------------------------------------------- #
 
     def set_data(self, diffimg, psfimg, mask, diffvar=None, shape=None):
         """ """
@@ -93,7 +124,8 @@ class DiffImgFitter(object):
                 self.diffvar = np.asarray(diffvar)
             else:
                 raise ValueError(
-                    "diffvar is not a single value and diffimg and diffvar do not have the smae shape. ")
+                    "diffvar is not a single value and diffimg and diffvar" +
+                    "do not have the smae shape.")
         else:
             self.diffvar = 0
 
@@ -108,9 +140,10 @@ class DiffImgFitter(object):
         """ """
         self.parameters = {k: v for k, v in zip(self.FREEPARAMETERS, param)}
 
-    # ============== #
-    #   GETTER       #
-    # ============== #
+    # ------------------------------------------------------------------- #
+    #                               GETTER                                #
+    # ------------------------------------------------------------------- #
+
     def get_chi2(self, param=None, simple_chi2=False, use_prior=True):
         """ """
         if param is not None:
@@ -118,26 +151,21 @@ class DiffImgFitter(object):
 
         if simple_chi2:
             return np.nansum(self.mask*(self.data-self.scaled_model)**2
-                             /self.variance_tot)
+                             / self.variance_tot)
 
         if not use_prior:
             return -2*np.nansum(self.get_loglikelihood())
         return -2*np.nansum(self.get_logproba())
 
-    # // Posterior
-
     def get_logproba(self):
         """ """
         return self.get_loglikelihood() + self.get_logprior()
 
-    # // Likelihood
     def get_loglikelihood(self):
         """ """
-        return np.log(stats.norm.pdf(self.data,
+        return np.log(stats.norm.pdf(self.mask*self.data,
                                      loc=self.scaled_model,
-                                     scale=np.sqrt(self.variance_tot))
-                      )
-    # // Priors
+                                     scale=np.sqrt(self.variance_tot)))
 
     def get_logprior(self):
         """ """
@@ -170,16 +198,16 @@ class DiffImgFitter(object):
             warnings.warn("Inaccurate covariance Matrix. Only trace defined")
             return _read_hess_(fakeMatrix)
 
-    # --------- #
-    #  PLOTTER  #
-    # --------- #
+    # ------------------------------------------------------------------- #
+    #                              PLOTTER                                #
+    # ------------------------------------------------------------------- #
+
     def show(self, axes=None, res_aspull=True):
         """ """
         if axes is not None:
             axd, axm, axr = axes
             fig = axd.figure
         else:
-            import matplotlib.pyplot as mpl
             fig = mpl.figure(figsize=[9, 3])
             axd = fig.add_axes([0.08, 0.1, 0.25, 0.8])
             axm = fig.add_axes([0.38, 0.1, 0.25, 0.8])
@@ -204,9 +232,10 @@ class DiffImgFitter(object):
                      transform=axr.transAxes, fontdict=dict(weight="bold"))
         return fig
 
-    # ============== #
-    #  Properties    #
-    # ============== #
+    # =================================================================== #
+    #                             PROPERTIES                              #
+    # =================================================================== #
+
     @property
     def variance_tot(self):
         """ """

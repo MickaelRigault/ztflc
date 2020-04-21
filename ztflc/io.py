@@ -5,9 +5,10 @@
 import os
 import pandas
 import numpy as np
-from astropy.io import fits
+
 from ztfquery import query, marshal
 from ztfquery.io import LOCALSOURCE
+
 LOCALDATA = LOCALSOURCE+"forcephotometry/"
 
 if os.path.isfile(LOCALSOURCE+"/externaldata/target_position.csv"):
@@ -21,9 +22,10 @@ else:
 class ZTFTarget(object):
     """ """
 
-    # ================ #
-    #   Init           #
-    # ================ #
+    # =================================================================== #
+    #                               Initial                               #
+    # =================================================================== #
+
     def __init__(self, target=None):
         """ """
         self._zquery = query.ZTFQuery()
@@ -44,13 +46,14 @@ class ZTFTarget(object):
         this.set_name(name)
         return this
 
-    # ================ #
-    #  Methods         #
-    # ================ #
+    # =================================================================== #
+    #                               Methods                               #
+    # =================================================================== #
 
-    # ------- #
-    # SETTER  #
-    # ------- #
+    # ------------------------------------------------------------------- #
+    #                               SETTER                                #
+    # ------------------------------------------------------------------- #
+
     def set_name(self, targetname):
         """ """
         self._name = targetname
@@ -65,9 +68,10 @@ class ZTFTarget(object):
         """ """
         self._jdrange = [jdmin, jdmax]
 
-    # ------- #
-    # LOADDER #
-    # ------- #
+    # ------------------------------------------------------------------- #
+    #                               LOADER                                #
+    # ------------------------------------------------------------------- #
+
     def load_marshal(self, source="local", program="Cosmology"):
         """ """
         if source == "local":
@@ -95,7 +99,8 @@ class ZTFTarget(object):
 
         self.zquery.load_metadata(**dictmetadata)
 
-    def download_data(self, which=["scimrefdiffimg.fits.fz", "diffimgpsf.fits"],
+    def download_data(self, which=["scimrefdiffimg.fits.fz",
+                                   "diffimgpsf.fits"],
                       nprocess=4, **kwargs):
         """
 
@@ -116,9 +121,10 @@ class ZTFTarget(object):
                                       **{**{"show_progress": False},
                                          **kwargs})
 
-    # ------- #
-    # GETTER  #
-    # ------- #
+    # ------------------------------------------------------------------- #
+    #                               GETTER                                #
+    # ------------------------------------------------------------------- #
+
     def get_coordinate(self, forcename=False, use="mean"):
         """ """
         if self.has_radec() and not forcename:
@@ -142,7 +148,8 @@ class ZTFTarget(object):
         return self.marshal.get_target_jdrange(self.name)
 
     # Others
-    def get_diffimg_forcepsf_filepath(self, exists=True, indexes=None, **kwargs):
+    def get_diffimg_forcepsf_filepath(self, exists=True,
+                                      indexes=None, **kwargs):
         """
         **kwargs eventually goes to ztfquery.Query.get_local_data()
                  -> filecheck=True, ignore_warnings=False, etc.
@@ -159,6 +166,30 @@ class ZTFTarget(object):
                 out.append([diff, None])
             else:
                 out.append([diff, expected_psf])
+        return out
+
+    def get_diffimg_forcepsf_maskimg_filepath(self, exists=True,
+                                              indexes=None, **kwargs):
+        """
+        **kwargs eventually goes to ztfquery.Query.get_local_data()
+                 -> filecheck=True, ignore_warnings=False, etc.
+        """
+        diffimg = self.get_diffimg_filepath(
+            exists=exists, indexes=indexes, **kwargs)
+        diffpsf = self.get_diffpsf_filepath(
+            exists=exists, indexes=indexes, **kwargs)
+        # maskimg = self.get_maskimg_filepath(
+        #     exists=exists, indexes=indexes, **kwargs)
+        out = []
+        for diff in diffimg:
+            expected_psf = diff.replace(
+                "scimrefdiffimg.fits.fz", "diffimgpsf.fits")
+            expected_msk = diff.replace(
+                "scimrefdiffimg.fits.fz", "mskimg.fits")
+            if expected_psf not in diffpsf:
+                out.append([diff, None])
+            else:
+                out.append([diff, expected_psf, expected_msk])
         return out
 
     def get_diffimg_filepath(self, exists=True, indexes=None, **kwargs):
@@ -179,9 +210,19 @@ class ZTFTarget(object):
                                           exists=exists, indexes=indexes,
                                           **kwargs)
 
-    # ================ #
-    #  Properties      #
-    # ================ #
+    def get_maskimg_filepath(self, exists=True, indexes=None, **kwargs):
+        """
+        **kwargs goes to ztfquery.Query.get_local_data()
+                 -> filecheck=True, ignore_warnings=False, etc.
+        """
+        return self.zquery.get_local_data("mskimg.fits",
+                                          exists=exists, indexes=indexes,
+                                          **kwargs)
+
+    # =================================================================== #
+    #                             PROPERTIES                              #
+    # =================================================================== #
+
     @property
     def zquery(self):
         """ """
