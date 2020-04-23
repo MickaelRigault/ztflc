@@ -195,7 +195,7 @@ class ForcePhotometry():
                             dataout[i] = {**fitresults, **datainfo}
                             dataout[i]["data_hasnan"] = has_nan
                         except ValueError:
-                            warnings.warn("Shape of diffimg and psfimg do not"
+                            warnings.warn("Shape of diffimg and psfimg do not "
                                           + "correspond (index: %d). Skipping."
                                           % i)
                             pass
@@ -275,7 +275,7 @@ class ForcePhotometry():
                     dataout = {**fitresults, **datainfo}
                     dataout["data_hasnan"] = has_nan
                 except ValueError:
-                    warnings.warn("Shape of diffimg and psfimg do not"
+                    warnings.warn("Shape of diffimg and psfimg do not "
                                   + "correspond (index: %d). Skipping."
                                   % (index))
                     return None
