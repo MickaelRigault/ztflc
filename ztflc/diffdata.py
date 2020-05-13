@@ -67,6 +67,14 @@ class DiffData:
             self._psfimg_raw = psf[0].data.copy()
 
         with fits.open(diffimgpath) as fdiff:
+            # If coords is a list, then assume different coordinates for each
+            # filter
+            filterid = fdiff[1].header["FILTERID"]
+            if isinstance(coords[0], list):
+                ra = coords[0][filterid - 1]
+                dec = coords[1][filterid - 1]
+                coords = [ra, dec]
+
             # x,y position
             if self._xy is None:
                 wcs_ = wcs.WCS(fdiff[1].header)

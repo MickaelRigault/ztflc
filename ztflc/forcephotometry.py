@@ -116,7 +116,7 @@ class ForcePhotometry:
             print("Starting run_forcefit() for %d image differences" % len(indexes))
 
         from astropy.utils.console import ProgressBar
-
+        
         index_count = len(indexes)
         _coords = [self.io.get_coordinate()] * index_count
         _update_diffdata = [update_diffdata] * index_count
@@ -202,7 +202,7 @@ class ForcePhotometry:
             self._data_forcefit = dataout_df
             if store:
                 self.store()
-
+                
         else:
             for i in indexes:
                 if verbose:

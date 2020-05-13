@@ -88,9 +88,18 @@ class ZTFTarget(object):
     def load_metadata(self, fromname=False):
         """ """
         if self.has_radec() and not fromname:
+            # Test if one radec value if given. If not, use 
+            # the first one (it does not matter here which
+            # one is used)
+            if isinstance(self.radec[0], list):
+                radec = [self.radec[0][0], self.radec[1][0]]
+            else:
+                radec = self.radec
+
             dictmetadata = self.marshal.get_metadataquery(
-                *self.radec, *self.jdrange, size=0.01
+                *radec, *self.jdrange, size=0.01
             )
+
         elif self.has_name():
             dictmetadata = self.marshal.get_target_metadataquery(self.name)
         else:

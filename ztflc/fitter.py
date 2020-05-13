@@ -89,7 +89,7 @@ class DiffImgFitter(object):
         """ """
         if np.shape(diffimg) != np.shape(psfimg):
             raise ValueError(
-                "diffimg and psfimg do not have the smae shape. They must."
+                "diffimg and psfimg do not have the same shape. They must."
             )
 
         if diffvar is not None:
@@ -99,7 +99,7 @@ class DiffImgFitter(object):
                 self.diffvar = np.asarray(diffvar)
             else:
                 raise ValueError(
-                    "diffvar is not a single value and diffimg and diffvar do not have the smae shape. "
+                    "diffvar is not a single value and diffimg and diffvar do not have the same shape. "
                 )
         else:
             self.diffvar = 0
