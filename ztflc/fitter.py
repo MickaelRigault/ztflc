@@ -57,6 +57,40 @@ class DiffImgFitter(object):
     # =================================================================== #
 
     # ------------------------------------------------------------------- #
+    #                               SETTER                                #
+    # ------------------------------------------------------------------- #
+
+    def set_data(self, diffimg, psfimg, mask, diffvar=None, shape=None):
+        """ """
+        print(np.shape(diffimg) == np.shape(psfimg))
+        if np.shape(diffimg) != np.shape(psfimg):
+            raise ValueError(
+                "diffimg and psfimg do not have the same shape. They must.")
+
+        if diffvar is not None:
+            if len(np.atleast_1d(diffvar)) == 1:
+                self.diffvar = float(np.atleast_1d(diffvar)[0])
+            elif np.shape(diffimg) == np.shape(diffvar):
+                self.diffvar = np.asarray(diffvar)
+            else:
+                raise ValueError(
+                    "diffvar is not a single value and diffimg and diffvar " +
+                    "do not have the same shape.")
+        else:
+            self.diffvar = 0
+
+        self._inputshape = np.shape(diffimg)
+        self.data = np.ravel(mask*diffimg)
+        self.flagout = np.isnan(self.data)
+        self.profile = np.ravel(mask*psfimg)
+        self._shape = shape
+        self.mask = mask
+
+    def set_parameters(self, param):
+        """ """
+        self.parameters = {k: v for k, v in zip(self.FREEPARAMETERS, param)}
+
+    # ------------------------------------------------------------------- #
     #                               FITTER                                #
     # ------------------------------------------------------------------- #
 
@@ -106,40 +140,6 @@ class DiffImgFitter(object):
         self.minuit = Minuit(self._minuit_chi2_,
                              print_level=print_level, errordef=step,
                              **minuit_kwargs)
-
-    # ------------------------------------------------------------------- #
-    #                               SETTER                                #
-    # ------------------------------------------------------------------- #
-
-    def set_data(self, diffimg, psfimg, mask, diffvar=None, shape=None):
-        """ """
-        print(np.shape(diffimg) == np.shape(psfimg))
-        if np.shape(diffimg) != np.shape(psfimg):
-            raise ValueError(
-                "diffimg and psfimg do not have the smae shape. They must.")
-
-        if diffvar is not None:
-            if len(np.atleast_1d(diffvar)) == 1:
-                self.diffvar = float(np.atleast_1d(diffvar)[0])
-            elif np.shape(diffimg) == np.shape(diffvar):
-                self.diffvar = np.asarray(diffvar)
-            else:
-                raise ValueError(
-                    "diffvar is not a single value and diffimg and diffvar " +
-                    "do not have the smae shape.")
-        else:
-            self.diffvar = 0
-
-        self._inputshape = np.shape(diffimg)
-        self.data = np.ravel(mask*diffimg)
-        self.flagout = np.isnan(self.data)
-        self.profile = np.ravel(mask*psfimg)
-        self._shape = shape
-        self.mask = mask
-
-    def set_parameters(self, param):
-        """ """
-        self.parameters = {k: v for k, v in zip(self.FREEPARAMETERS, param)}
 
     # ------------------------------------------------------------------- #
     #                               GETTER                                #

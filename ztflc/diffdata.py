@@ -76,7 +76,7 @@ class DiffData():
             # change all outsider values to False
             mean_pix = np.mean(np.ravel(self._datatmp))
             std_pix = mad_std(np.ravel(self._datatmp))
-            self.threshold_array = np.abs(self._datatmp) > \
+            self.threshold_array = np.abs(self._datatmp) < \
                 np.abs(mean_pix + 10*std_pix)
             # actual part of the diffimg used to fit
             self._diffimg = self._datatmp[ymin:ymax, xmin:xmax].copy()
