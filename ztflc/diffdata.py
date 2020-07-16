@@ -6,7 +6,7 @@ from astropy.io import fits
 from scipy import stats
 
 
-class DiffData:
+class DiffData( object ):
     """ """
 
     def __init__(self, diffimgpath, psfimgpath, coords, inpixels=False, clean=True):
@@ -19,7 +19,7 @@ class DiffData:
     # ------- #
     # FITTER  #
     # ------- #
-    def fit_flux(self):
+    def fit_flux(self, **kwargs):
         """ """
         from .fitter import DiffImgFitter
         from astropy.stats import mad_std
@@ -44,14 +44,13 @@ class DiffData:
         ]
 
         # Return fitter output
-        return self.fitter.fit(**fit_prop)
+        return self.fitter.fit(**{**fit_prop,**kwargs})
 
     # ------- #
     # SETTER  #
     # ------- #
-    def set_data(
-        self, diffimgpath, psfimgpath, coords, inpixels=False, clean=True, **kwargs
-    ):
+    def set_data(self, diffimgpath, psfimgpath, coords,
+                     inpixels=False, clean=True, **kwargs):
         """ """
         from astropy import wcs
         from astropy.io import fits

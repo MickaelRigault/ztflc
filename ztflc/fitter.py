@@ -11,7 +11,6 @@ from .utils import make_method
 
 
 class DiffImgFitter(object):
-    """ """
 
     FREEPARAMETERS = ["sigma", "ampl"]
 
@@ -33,8 +32,9 @@ class DiffImgFitter(object):
     # ============== #
     #   FITTER       #
     # ============== #
-    def fit(self, **kwargs):
+    def fit(self, verbose=False, **kwargs):
         """ """
+        self._hfitverbose = verbose
         # Setting guesses
         self._setup_minuit_(**kwargs)
         # fitting
@@ -122,6 +122,8 @@ class DiffImgFitter(object):
         if param is not None:
             self.set_parameters(param)
 
+        if self._fitverbose:
+            print(self.parameters)
         if simple_chi2:
             return np.nansum((self.data - self.scaled_model) ** 2 / self.variance_tot)
 
@@ -132,16 +134,19 @@ class DiffImgFitter(object):
     # // Posterior
     def get_logproba(self):
         """ """
-        return self.get_loglikelihood() + self.get_logprior()
-
+        val =  self.get_loglikelihood() + self.get_logprior()
+        if self._fitverbose:
+            print("get_logproba:", val)
+        return val
+            
     # // Likelihood
     def get_loglikelihood(self):
         """ """
-        return np.log(
-            stats.norm.pdf(
-                self.data, loc=self.scaled_model, scale=np.sqrt(self.variance_tot)
-            )
-        )
+        val =  stats.norm.logpdf( self.data, loc=self.scaled_model,
+                            scale=np.sqrt(self.variance_tot))
+        if self._fitverbose:
+            print("get_loglikelihood:", val)
+        return val
 
     # // Priors
     def get_logprior(self):
@@ -256,3 +261,10 @@ class DiffImgFitter(object):
     def dof(self):
         """ """
         return self.ndata - self.nfreeparameters
+
+    @property
+    def _fitverbose(self):
+        """ """
+        if not hasattr(self, "_hfitverbose"):
+            self._hfitverbose = False
+        return self._hfitverbose

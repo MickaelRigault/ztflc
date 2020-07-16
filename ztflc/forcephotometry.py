@@ -15,8 +15,7 @@ def run_forcephotometry(
     verbose=True,
     filecheck=True,
     ignore_warnings=False,
-    **kwargs
-):
+    **kwargs):
     """ """
     fp = ForcePhotometry.from_name(target)
     fp.load_metadata()
@@ -82,16 +81,9 @@ class ForcePhotometry:
     # -------- #
     # FITTER   #
     # -------- #
-    def run_forcefit(
-        self,
-        indexes=None,
-        update_diffdata=False,
-        store=False,
-        verbose=True,
-        no_badsub=False,
-        force_refit=False,
-        nprocess=4,
-    ):
+    def run_forcefit(self, indexes=None, update_diffdata=False,
+                         store=False, verbose=True, no_badsub=False,
+                         force_refit=False, nprocess=4):
         """ """
         import gc
 
