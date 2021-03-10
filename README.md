@@ -2,6 +2,9 @@
 LightCurve Estimation from ZTF data
 
 
+[![PyPI](https://img.shields.io/pypi/v/ztflc.svg?style=flat-square)](https://pypi.python.org/pypi/ztflc)
+
+
 ### Credit
 
 M. Rigault (corresponding author, m.rigault@ipnl.in2p3.fr, CNRS/IN2P3).
