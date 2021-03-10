@@ -92,7 +92,7 @@ class DiffData( object ):
             self._diffimg_targetpos = self._xy - [xmin, ymin]
             self._header = fdiff[1].header.copy()
             
-            #self._istarget_in = (x-buffer<0) or (x+buffer>imgshape[1]) or (y-buffer<0) or (y+buffer>imgshape[0])
+            self._istarget_in = (x-buffer[0]>0) and (x+buffer[0]<imgshape[1]) and (y-buffer[1]>0) and (y+buffer[1]<imgshape[0])
             
         if clean:
             self._iscleaned = True
