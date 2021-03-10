@@ -69,6 +69,8 @@ class DiffData( object ):
             # If coords is a list, then assume different coordinates for each
             # filter
             filterid = fdiff[1].header["FILTERID"]
+            imgshape = fdiff[1].data.shape
+            
             if isinstance(coords[0], list):
                 ra = coords[0][filterid - 1]
                 dec = coords[1][filterid - 1]
@@ -89,7 +91,9 @@ class DiffData( object ):
             self._datatmp = fdiff[1].data.copy()
             self._diffimg_targetpos = self._xy - [xmin, ymin]
             self._header = fdiff[1].header.copy()
-
+            
+            self._istarget_in = (x-buffer<0) or (x+buffer>imgshape[1]) or (y-buffer<0) or (y+buffer>imgshape[0])
+            
         if clean:
             self._iscleaned = True
             flagout = self._diffimg < -mad_std(self._diffimg) * 10
@@ -286,6 +290,13 @@ class DiffData( object ):
             self._xy = None
         return self._xy
 
+    @property
+    def target_in(self):
+        """ Test if the target is enough within the image"""
+        if not hasattr(self, "_istarget_in"):
+            return None
+        return self._istarget_in
+    
     #
     # Additional information
     #
