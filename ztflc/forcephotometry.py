@@ -70,13 +70,13 @@ class ForcePhotometry:
         self._filepathes = self.io.get_diffimg_forcepsf_filepath(**kwargs)
         self._diffdata = None
 
-    def store(self, filename=None):
+    def store(self, filename=None, mode='w'):
         """ """
         if filename is None:
             from .io import LOCALDATA
 
             filename = LOCALDATA + "/%s.csv" % self.io.name
-        self._data_forcefit.to_csv(filename, index=False)
+        self._data_forcefit.to_csv(filename, index=False, mode=mode)
 
     # -------- #
     # FITTER   #
