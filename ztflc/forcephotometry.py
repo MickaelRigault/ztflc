@@ -98,7 +98,7 @@ class ForcePhotometry:
                 LOCALDATA, "{}.csv".format(self.io.name)
             )
             previous_results = pandas.read_csv(
-                path_previous_results, float_precision="round_trip"
+                path_previous_results, float_precision="round_trip", comment="#"
             )
         except FileNotFoundError:
             previous_results = pandas.DataFrame(columns=["filename"])
