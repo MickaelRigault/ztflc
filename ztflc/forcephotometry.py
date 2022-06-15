@@ -15,7 +15,8 @@ def run_forcephotometry(
     verbose=True,
     filecheck=True,
     ignore_warnings=False,
-    **kwargs):
+    **kwargs
+):
     """ """
     fp = ForcePhotometry.from_name(target)
     fp.load_metadata()
@@ -37,14 +38,14 @@ class ForcePhotometry:
 
     @classmethod
     def from_name(cls, name):
-        """ Load the ForcePhotometry from Target Name """
+        """Load the ForcePhotometry from Target Name"""
         from .io import ZTFTarget
 
         return cls(ZTFTarget.from_name(name))
 
     @classmethod
     def from_coords(cls, ra, dec, jdmin=None, jdmax=None, name="unknown"):
-        """ Load the ForcePhotometry from Target Name """
+        """Load the ForcePhotometry from Target Name"""
         from .io import ZTFTarget
 
         return cls(ZTFTarget.from_coords(ra, dec, jdmin=jdmin, jdmax=jdmax, name=name))
@@ -70,7 +71,7 @@ class ForcePhotometry:
         self._filepathes = self.io.get_diffimg_forcepsf_filepath(**kwargs)
         self._diffdata = None
 
-    def store(self, filename=None, mode='w'):
+    def store(self, filename=None, mode="w"):
         """ """
         if filename is None:
             from .io import LOCALDATA
@@ -81,9 +82,16 @@ class ForcePhotometry:
     # -------- #
     # FITTER   #
     # -------- #
-    def run_forcefit(self, indexes=None, update_diffdata=False,
-                         store=False, verbose=True, no_badsub=False,
-                         force_refit=False, nprocess=4):
+    def run_forcefit(
+        self,
+        indexes=None,
+        update_diffdata=False,
+        store=False,
+        verbose=True,
+        no_badsub=False,
+        force_refit=False,
+        nprocess=4,
+    ):
         """ """
         import gc
 
@@ -92,15 +100,14 @@ class ForcePhotometry:
 
         from .io import LOCALDATA
 
+        path_previous_results = os.path.join(LOCALDATA, "{}.csv".format(self.io.name))
+
         # Try to load previous fit results
-        try:
-            path_previous_results = os.path.join(
-                LOCALDATA, "{}.csv".format(self.io.name)
-            )
+        if os.path.isfile(path_previous_results):
             previous_results = pandas.read_csv(
                 path_previous_results, float_precision="round_trip", comment="#"
             )
-        except FileNotFoundError:
+        else:
             previous_results = pandas.DataFrame(columns=["filename"])
 
         dataout = {}
@@ -108,7 +115,7 @@ class ForcePhotometry:
             print("Starting run_forcefit() for %d image differences" % len(indexes))
 
         from astropy.utils.console import ProgressBar
-        
+
         index_count = len(indexes)
         _coords = [self.io.get_coordinate()] * index_count
         _update_diffdata = [update_diffdata] * index_count
@@ -197,7 +204,7 @@ class ForcePhotometry:
             self._data_forcefit = dataout_df
             if store:
                 self.store()
-                
+
         else:
             for i in indexes:
                 if verbose:
@@ -247,7 +254,7 @@ class ForcePhotometry:
                 self.store()
 
     def get_ith_diffdata(self, index, update=False, rebuild=False, **kwargs):
-        """ loads and returns a DiffData object corresponding
+        """loads and returns a DiffData object corresponding
         at the ith-entry of the self.filepathes
 
         Parameters
@@ -379,7 +386,7 @@ class ForcePhotometry:
     # =============== #
     @property
     def data_forcefit(self):
-        """ DataFrame containing the forcefit results and data info """
+        """DataFrame containing the forcefit results and data info"""
         if not hasattr(self, "_data_forcefit"):
             raise AttributeError("data_forcefit not loaded. run self.run_forcefit()")
         return self._data_forcefit
@@ -396,7 +403,7 @@ class ForcePhotometry:
 
     @property
     def filepathes(self):
-        """ List of DiffImage and PSFDiffImage file path """
+        """List of DiffImage and PSFDiffImage file path"""
         if not hasattr(self, "_filepathes"):
             self.load_filepathes()
         return self._filepathes
@@ -407,7 +414,7 @@ class ForcePhotometry:
 
     @property
     def diffdata(self):
-        """ DiffData object associated with the filepathes"""
+        """DiffData object associated with the filepathes"""
         if not hasattr(self, "_diffdata") or self._diffdata is None:
             if self.had_filepathes():
                 self._diffdata = [None for i in range(self.nsources)]
