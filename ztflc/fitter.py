@@ -38,9 +38,10 @@ class DiffImgFitter(object):
         # Setting guesses
         self._setup_minuit_(**kwargs)
         # fitting
-        self._migrad_output_ = self.minuit.migrad()
+        self.minuit.migrad()
+
         # checking fit
-        if not self._migrad_output_[0]["is_valid"]:
+        if not self.minuit.valid:
             warnings.warn("migrad is not valid")
             self.fit_ok = False
         else:
@@ -53,6 +54,7 @@ class DiffImgFitter(object):
         # - readout -
         self.fitvalues = {}
         covmat = self.get_fit_covmatrix()
+
         for i, name in enumerate(self.FREEPARAMETERS):
             self.fitvalues[name] = self.best_parameters[i]
             self.fitvalues[name + ".err"] = np.sqrt(covmat[i, i])
@@ -61,26 +63,32 @@ class DiffImgFitter(object):
         self.fitvalues["fval"] = self.minuit.fval
         self.fitvalues["chi2"] = self.get_chi2(simple_chi2=True)
         self.fitvalues["chi2dof"] = self.fitvalues["chi2"] / self.dof
+
         return self.fitvalues
 
     def _setup_minuit_(self, step=1, print_level=0, **kwargs):
-        """
-        """
+        """ """
         # == Minuit Keys == #
         minuit_kwargs = {}
         for param in self.FREEPARAMETERS:
             minuit_kwargs[param] = kwargs.get(
                 "%s_guess" % param, 0 if not "sigma" in param else 1
             )
-            minuit_kwargs["limit_" + param] = kwargs.get(
-                "%s_boundaries" % param, None if not "sigma" in param else [0, None]
-            )
-            minuit_kwargs["fix_" + param] = kwargs.get("%s_fixed" % param, False)
 
         self._minuit_input = minuit_kwargs
-        self.minuit = Minuit(
-            self._minuit_chi2_, print_level=print_level, errordef=step, **minuit_kwargs
-        )
+
+        self.minuit = Minuit(self._minuit_chi2_, **minuit_kwargs)
+        self.minuit.errordef = step
+        self.minuit.print_level = print_level
+
+        for param in self.FREEPARAMETERS:
+            limits = kwargs.get(
+                "%s_boundaries" % param, None if not "sigma" in param else [0, None]
+            )
+            if limits:
+                self.minuit.limits[param] = (limits[0], limits[1])
+            fixed = kwargs.get("%s_fixed" % param, False)
+            self.minuit.fixed[param] = fixed
 
     # -------- #
     # SETTER   #
@@ -134,16 +142,17 @@ class DiffImgFitter(object):
     # // Posterior
     def get_logproba(self):
         """ """
-        val =  self.get_loglikelihood() + self.get_logprior()
+        val = self.get_loglikelihood() + self.get_logprior()
         if self._fitverbose:
             print("get_logproba:", val)
         return val
-            
+
     # // Likelihood
     def get_loglikelihood(self):
         """ """
-        val =  stats.norm.logpdf( self.data, loc=self.scaled_model,
-                            scale=np.sqrt(self.variance_tot))
+        val = stats.norm.logpdf(
+            self.data, loc=self.scaled_model, scale=np.sqrt(self.variance_tot)
+        )
         if self._fitverbose:
             print("get_loglikelihood:", val)
         return val
@@ -154,11 +163,10 @@ class DiffImgFitter(object):
         return 0
 
     def get_fit_covmatrix(self):
-        """ coveriance matrix after the fit """
+        """coveriance matrix after the fit"""
 
         def _read_hess_(hess):
-            """
-            """
+            """ """
             if len(hess) == len(self.FREEPARAMETERS):
                 return hess
 
@@ -174,8 +182,8 @@ class DiffImgFitter(object):
 
             return hess
 
-        if self._migrad_output_[0]["is_valid"]:
-            return _read_hess_(np.asarray(self.minuit.matrix()))
+        if self.minuit.valid:
+            return _read_hess_(np.asarray(self.minuit.covariance))
         else:
             fakeMatrix = np.zeros(
                 (len(self.best_parameters), len(self.best_parameters))

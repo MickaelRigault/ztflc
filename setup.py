@@ -11,7 +11,7 @@ MAINTAINER_EMAIL = "m.rigault@ipnl.in2p3.fr"
 URL = "https://github.com/MickaelRigault/ztflc/"
 LICENSE = "BSD (3-clause)"
 DOWNLOAD_URL = "https://github.com/MickaelRigault/ztflc/tarball/0.2"
-VERSION = "0.2.3"
+VERSION = "0.2.4"
 
 try:
     from setuptools import setup, find_packages
@@ -38,6 +38,16 @@ def check_dependencies():
         import pandas
     except ImportError:
         install_requires.append("pandas")
+
+    try:
+        import iminuit
+    except ImportError:
+        install_requires.append("iminuit")
+
+    try:
+        import numpy
+    except ImportError:
+        install_requires.append("numpy")
 
     return install_requires
 

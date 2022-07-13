@@ -306,7 +306,7 @@ class ForcePhotometry:
 
         # Parse the query to a dictionary to check if it is 40 characters long or not
         if len(query) == 1:
-            query = query.to_dict("r")[0]
+            query = query.to_dict("records")[0]
 
         # Now do the actual check
         if len(query) == 40 and not force_refit:
