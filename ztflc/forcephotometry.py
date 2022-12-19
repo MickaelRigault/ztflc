@@ -68,7 +68,11 @@ class ForcePhotometry:
                  -> exists=True, indexes=None, filecheck=True, ignore_warnings=False, etc.
 
         """
-        self._filepathes = self.io.get_diffimg_forcepsf_filepath(**kwargs)
+        _filepaths = self.io.get_diffimg_forcepsf_filepath(**kwargs)
+
+        # clean list of missing psf image entries (will be None)
+        self._filepathes = [f for f in _filepaths if f[1] is not None]
+
         self._diffdata = None
 
     def store(self, filename=None, mode="w"):
