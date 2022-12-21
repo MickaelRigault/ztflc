@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os
-import pandas
+import pandas as pd
 import numpy as np
 import warnings, multiprocessing
 from .diffdata import DiffData
@@ -108,11 +108,11 @@ class ForcePhotometry:
 
         # Try to load previous fit results
         if os.path.isfile(path_previous_results):
-            previous_results = pandas.read_csv(
+            previous_results = pd.read_csv(
                 path_previous_results, float_precision="round_trip", comment="#"
             )
         else:
-            previous_results = pandas.DataFrame(columns=["filename"])
+            previous_results = pd.DataFrame(columns=["filename"])
 
         dataout = {}
         if verbose:
@@ -129,53 +129,6 @@ class ForcePhotometry:
         _force_refit = [force_refit] * index_count
 
         if nprocess > 1:
-            dataout_df = pandas.DataFrame(
-                columns=[
-                    "sigma",
-                    "sigma.err",
-                    "ampl",
-                    "ampl.err",
-                    "fval",
-                    "chi2",
-                    "chi2dof",
-                    "filename",
-                    "humidity",
-                    "filter",
-                    "obsmjd",
-                    "ccdid",
-                    "amp_id",
-                    "gain",
-                    "readnoi",
-                    "darkcur",
-                    "magzp",
-                    "magzpunc",
-                    "magzprms",
-                    "clrcoeff",
-                    "clrcounc",
-                    "zpclrcov",
-                    "zpmed",
-                    "zpavg",
-                    "zprmsall",
-                    "clrmed",
-                    "clravg",
-                    "clrrms",
-                    "qid",
-                    "rcid",
-                    "seeing",
-                    "airmass",
-                    "nmatches",
-                    "maglim",
-                    "status",
-                    "infobits",
-                    "filterid",
-                    "fieldid",
-                    "moonalt",
-                    "moonillf",
-                    "target_x",
-                    "target_y",
-                    "data_hasnan",
-                ]
-            )
             bar = ProgressBar(index_count)
             dataout_list = []
 
@@ -201,11 +154,7 @@ class ForcePhotometry:
                 if bar is not None:
                     bar.update(index_count)
 
-            for dataout_i in dataout_list:
-                if dataout_i is not None:
-                    dataout_i = pandas.Series(dataout_i, index=dataout_df.columns)
-                    dataout_df = dataout_df.append(dataout_i, ignore_index=True)
-            self._data_forcefit = dataout_df
+            self._data_forcefit = pd.DataFrame(dataout_list)
             if store:
                 self.store()
 
@@ -253,7 +202,7 @@ class ForcePhotometry:
                     del diffdata
                 gc.collect()
 
-            self._data_forcefit = pandas.DataFrame(dataout).T
+            self._data_forcefit = pd.DataFrame(dataout).T
             if store:
                 self.store()
 
