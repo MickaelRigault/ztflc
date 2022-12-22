@@ -4,6 +4,7 @@
 import os
 import pandas as pd
 import numpy as np
+from tqdm import tqdm
 import warnings, multiprocessing
 from .diffdata import DiffData
 
@@ -161,7 +162,7 @@ class ForcePhotometry:
                 self.store()
 
         else:
-            for i in indexes:
+            for i in tqdm(indexes):
                 if verbose:
                     print("running %d " % i)
                     print(self.filepathes[i][0].split("/")[-1])

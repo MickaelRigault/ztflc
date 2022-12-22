@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
+import warnings
 import numpy as np
 from astropy.io import fits
 from scipy import stats
 
 
-class DiffData( object ):
+class DiffData(object):
     """ """
 
     def __init__(self, diffimgpath, psfimgpath, coords, inpixels=False, clean=True):
@@ -26,17 +26,15 @@ class DiffData( object ):
 
         # Load the fitter
         self.fitter = DiffImgFitter(self.diffimg, self.psfimg, 0, shape=self.psfshape)
-
-        # Load the fitter
         robust_nmad = mad_std(self.fitter.data[~np.isnan(self.fitter.data)])
         fit_prop = {
             "ampl_guess": np.nanmax(self.fitter.data)
-            * (np.sqrt(2 * np.pi * 2 ** 2)),  # 2 sigma guess
+            * (np.sqrt(2 * np.pi * 2**2)),  # 2 sigma guess
             "sigma_guess": robust_nmad,
         }
         fit_prop["ampl_boundaires"] = [
-            -2 * np.nanmin(self.fitter.data) * (np.sqrt(2 * np.pi * 2 ** 2)),
-            5 * np.nanmax(self.fitter.data) * (np.sqrt(2 * np.pi * 2 ** 2)),
+            -2 * np.nanmin(self.fitter.data) * (np.sqrt(2 * np.pi * 2**2)),
+            5 * np.nanmax(self.fitter.data) * (np.sqrt(2 * np.pi * 2**2)),
         ]
         fit_prop["sigma_boundaries"] = [
             robust_nmad / 10.0,
@@ -44,13 +42,14 @@ class DiffData( object ):
         ]
 
         # Return fitter output
-        return self.fitter.fit(**{**fit_prop,**kwargs})
+        return self.fitter.fit(**{**fit_prop, **kwargs})
 
     # ------- #
     # SETTER  #
     # ------- #
-    def set_data(self, diffimgpath, psfimgpath, coords,
-                     inpixels=False, clean=True, **kwargs):
+    def set_data(
+        self, diffimgpath, psfimgpath, coords, inpixels=False, clean=True, **kwargs
+    ):
         """ """
         from astropy import wcs
         from astropy.io import fits
@@ -70,12 +69,11 @@ class DiffData( object ):
             # filter
             filterid = fdiff[1].header["FILTERID"]
             imgshape = fdiff[1].data.shape
-            
+
             if isinstance(coords[0], list):
                 ra = coords[0][filterid - 1]
                 dec = coords[1][filterid - 1]
                 coords = [ra, dec]
-
             # x,y position
             if self._xy is None:
                 wcs_ = wcs.WCS(fdiff[1].header)
@@ -91,18 +89,24 @@ class DiffData( object ):
             self._datatmp = fdiff[1].data.copy()
             self._diffimg_targetpos = self._xy - [xmin, ymin]
             self._header = fdiff[1].header.copy()
-            
-            self._istarget_in = (x-buffer[0]>0) and (x+buffer[0]<imgshape[1]) and (y-buffer[1]>0) and (y+buffer[1]<imgshape[0])
-            
+            self._istarget_in = (
+                (x - buffer[0] > 0)
+                and (x + buffer[0] < imgshape[1])
+                and (y - buffer[1] > 0)
+                and (y + buffer[1] < imgshape[0])
+            )
+
         if clean:
             self._iscleaned = True
-            flagout = self._diffimg < -mad_std(self._diffimg) * 10
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                flagout = self._diffimg < -mad_std(self._diffimg) * 10
             self._diffimg[flagout] = np.NaN
         else:
             self._iscleaned = False
 
         self._psf_shift = self._diffimg_targetpos - np.asarray(self.psfshape) / 2 + 0.5
-        # ::-1 because numpy are not image but matrices
+        # ::-1 because numpy arrays are not images but matrices
         self._psfimg = ndimage.interpolation.shift(
             self._psfimg_raw, self._psf_shift[::-1], order=5
         )
@@ -112,8 +116,10 @@ class DiffData( object ):
     # ------- #
     def get_main_info(self, backup_value=None):
         """ """
-        header = {k.lower():self.header.get(k) if k in self.header else backup_value
-                  for k in self._main_columns}
+        header = {
+            k.lower(): self.header.get(k) if k in self.header else backup_value
+            for k in self._main_columns
+        }
         header["target_x"], header["target_y"] = self.target_position
         return header
 
@@ -256,28 +262,28 @@ class DiffData( object ):
     #
     @property
     def diffimg(self):
-        """ Difference data patch around the target. """
+        """Difference data patch around the target."""
         if not hasattr(self, "_diffimg"):
             self._diffimg = None
         return self._diffimg
 
     @property
     def psfimg_raw(self):
-        """ PSF data as given by the IRSA pipeline """
+        """PSF data as given by the IRSA pipeline"""
         if not hasattr(self, "_psfimg_raw"):
             self._psfimg_raw = None
         return self._psfimg_raw
 
     @property
     def psfimg(self):
-        """ PSF data re-aligned with the target """
+        """PSF data re-aligned with the target"""
         if not hasattr(self, "_psfimg_raw"):
             self._psfimg = None
         return self._psfimg
 
     @property
     def psfshape(self):
-        """ shape of the psf image """
+        """shape of the psf image"""
         return np.shape(self.psfimg_raw)
 
     #
@@ -292,17 +298,17 @@ class DiffData( object ):
 
     @property
     def target_in(self):
-        """ Test if the target is enough within the image"""
+        """Test if the target is enough within the image"""
         if not hasattr(self, "_istarget_in"):
             return None
         return self._istarget_in
-    
+
     #
     # Additional information
     #
     @property
     def header(self):
-        """ Data header"""
+        """Data header"""
         if not hasattr(self, "_header"):
             self._header = None
         return self._header
