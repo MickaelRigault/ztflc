@@ -42,7 +42,8 @@ class DiffImgFitter(object):
 
         # checking fit
         if not self.minuit.valid:
-            warnings.warn("migrad is not valid")
+            if self._hfitverbose:
+                warnings.warn("migrad is not valid")
             self.fit_ok = False
         else:
             self.fit_ok = True
@@ -190,7 +191,8 @@ class DiffImgFitter(object):
             )
             for i, k in enumerate(self.FREEPARAMETERS):
                 fakeMatrix[i, i] = self.minuit.errors[k] ** 2
-            warnings.warn("Inaccurate covariance Matrix. Only trace defined")
+            if self._hfitverbose:
+                warnings.warn("Inaccurate covariance Matrix. Only trace defined")
             return _read_hess_(fakeMatrix)
 
     # --------- #

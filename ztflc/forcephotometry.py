@@ -191,15 +191,18 @@ class ForcePhotometry:
                         print("NaNs in the image, skipped")
                     else:
                         try:
-                            fitresults = diffdata.fit_flux()
-                            datainfo = diffdata.get_main_info()
-                            dataout[i] = {**fitresults, **datainfo}
-                            dataout[i]["data_hasnan"] = has_nan
+                            with warnings.catch_warnings():
+                                warnings.simplefilter("ignore")
+                                fitresults = diffdata.fit_flux()
+                                datainfo = diffdata.get_main_info()
+                                dataout[i] = {**fitresults, **datainfo}
+                                dataout[i]["data_hasnan"] = has_nan
                         except ValueError:
-                            warnings.warn(
-                                "Shape of diffimg and psfimg do not correspond (index: %d). Skipping."
-                                % (i)
-                            )
+                            if verbose:
+                                warnings.warn(
+                                    "Shape of diffimg and psfimg do not correspond (index: %d). Skipping."
+                                    % (i)
+                                )
                             pass
                     del diffdata
                 gc.collect()
@@ -276,19 +279,23 @@ class ForcePhotometry:
             diffdata = DiffData(*filepath, coords)
             has_nan = np.any(np.isnan(diffdata.diffimg))
             if has_nan and no_badsub:
-                print("NaNs in the image, skipped")
+                if verbose:
+                    print("NaNs in the image, skipped")
                 return None
             else:
                 try:
-                    fitresults = diffdata.fit_flux()
-                    datainfo = diffdata.get_main_info()
-                    dataout = {**fitresults, **datainfo}
-                    dataout["data_hasnan"] = has_nan
+                    with warnings.catch_warnings():
+                        warnings.simplefilter("ignore")
+                        fitresults = diffdata.fit_flux()
+                        datainfo = diffdata.get_main_info()
+                        dataout = {**fitresults, **datainfo}
+                        dataout["data_hasnan"] = has_nan
                 except ValueError:
-                    warnings.warn(
-                        "Shape of diffimg and psfimg do not correspond (index: %d). Skipping."
-                        % (index)
-                    )
+                    if verbose:
+                        warnings.warn(
+                            "Shape of diffimg and psfimg do not correspond (index: %d). Skipping."
+                            % (index)
+                        )
                     return None
             del diffdata
 
