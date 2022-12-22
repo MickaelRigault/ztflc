@@ -154,7 +154,9 @@ class ForcePhotometry:
                 if bar is not None:
                     bar.update(index_count)
 
-            self._data_forcefit = pd.DataFrame(dataout_list)
+            dataout_final = [i for i in dataout_list if i is not None]
+
+            self._data_forcefit = pd.DataFrame(dataout_final)
             if store:
                 self.store()
 
