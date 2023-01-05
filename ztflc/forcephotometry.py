@@ -82,6 +82,8 @@ class ForcePhotometry:
             from .io import LOCALDATA
 
             filename = LOCALDATA + "/%s.csv" % self.io.name
+
+        oldmask = os.umask(0o002)
         self._data_forcefit.to_csv(filename, index=False, mode=mode)
 
     # -------- #
