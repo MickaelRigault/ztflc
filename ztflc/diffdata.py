@@ -318,6 +318,7 @@ class DiffData(object):
         """ """
         return [
             "FILENAME",
+            "EXPTIME",
             "HUMIDITY",
             "FILTER",
             "OBSMJD",
