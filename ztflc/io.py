@@ -87,7 +87,7 @@ class ZTFTarget(object):
         if store:
             self._marshal.store()
 
-    def load_metadata(self, fromname=False):
+    def load_metadata(self, fromname=False, clean=True):
         """ """
         if self.has_radec() and not fromname:
             # Test if one radec value if given. If not, use
@@ -106,6 +106,8 @@ class ZTFTarget(object):
             dictmetadata = self.marshal.get_target_metadataquery(self.name)
         else:
             raise AttributeError("Cannot load the metadata, no self.name and no _radec")
+
+        dictmetadata["clean"] = clean
 
         self.zquery.load_metadata(**dictmetadata)
 

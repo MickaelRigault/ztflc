@@ -60,11 +60,11 @@ class ForcePhotometry:
     # -------- #
     # LOADDER  #
     # -------- #
-    def load_metadata(self, **kwargs):
+    def load_metadata(self, clean=True, **kwargs):
         """ """
         if not hasattr(self.io, "marshal"):
             self.io.load_marshal(**kwargs)
-        self.io.load_metadata()
+        self.meta = self.io.load_metadata(clean=clean)
 
     def load_filepathes(self, download_dir=None, **kwargs):
         """
