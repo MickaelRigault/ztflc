@@ -59,7 +59,7 @@ class ZTFTarget(object):
         self._name = targetname
 
     def set_coordinate(self, ra, dec):
-        """ provide the coordinate.
+        """provide the coordinate.
         Get them using self.get_coordinate().
         """
         self._radec = [ra, dec]
@@ -88,7 +88,7 @@ class ZTFTarget(object):
     def load_metadata(self, fromname=False):
         """ """
         if self.has_radec() and not fromname:
-            # Test if one radec value if given. If not, use 
+            # Test if one radec value if given. If not, use
             # the first one (it does not matter here which
             # one is used)
             if isinstance(self.radec[0], list):
@@ -156,13 +156,20 @@ class ZTFTarget(object):
         return self.marshal.get_target_jdrange(self.name)
 
     # Others
-    def get_diffimg_forcepsf_filepath(self, exists=True, indexes=None, **kwargs):
+    def get_diffimg_forcepsf_filepath(
+        self, download_dir=None, exists=True, indexes=None, **kwargs
+    ):
         """
         **kwargs eventually goes to ztfquery.Query.get_local_data()
                  -> filecheck=True, ignore_warnings=False, etc.
         """
-        diffimg = self.get_diffimg_filepath(exists=exists, indexes=indexes, **kwargs)
-        diffpsf = self.get_diffpsf_filepath(exists=exists, indexes=indexes, **kwargs)
+        diffimg = self.get_diffimg_filepath(
+            download_dir=download_dir, exists=exists, indexes=indexes, **kwargs
+        )
+        diffpsf = self.get_diffpsf_filepath(
+            download_dir=download_dir, exists=exists, indexes=indexes, **kwargs
+        )
+
         out = []
         for diff in diffimg:
             expected_psf = diff.replace("scimrefdiffimg.fits.fz", "diffimgpsf.fits")
@@ -170,22 +177,31 @@ class ZTFTarget(object):
                 out.append([diff, None])
             else:
                 out.append([diff, expected_psf])
+
         return out
 
-    def get_diffimg_filepath(self, exists=True, indexes=None, **kwargs):
+    def get_diffimg_filepath(
+        self, download_dir=None, exists=True, indexes=None, **kwargs
+    ):
         """
         **kwargs goes to ztfquery.Query.get_local_data()
                  -> filecheck=True, ignore_warnings=False, etc.
         """
+        kwargs["download_dir"] = download_dir
+
         return self.zquery.get_local_data(
             "scimrefdiffimg.fits.fz", exists=exists, indexes=indexes, **kwargs
         )
 
-    def get_diffpsf_filepath(self, exists=True, indexes=None, **kwargs):
+    def get_diffpsf_filepath(
+        self, download_dir=None, exists=True, indexes=None, **kwargs
+    ):
         """
         **kwargs goes to ztfquery.Query.get_local_data()
                  -> filecheck=True, ignore_warnings=False, etc.
         """
+        kwargs["download_dir"] = download_dir
+
         return self.zquery.get_local_data(
             "diffimgpsf.fits", exists=exists, indexes=indexes, **kwargs
         )
@@ -227,7 +243,7 @@ class ZTFTarget(object):
         return self._radec
 
     def has_name(self):
-        """ Test if the current instance has a target set """
+        """Test if the current instance has a target set"""
         return hasattr(self, "_name") and self._name is not None
 
     def has_radec(self):

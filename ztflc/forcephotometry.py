@@ -63,13 +63,15 @@ class ForcePhotometry:
             self.io.load_marshal(**kwargs)
         self.io.load_metadata()
 
-    def load_filepathes(self, **kwargs):
+    def load_filepathes(self, download_dir=None, **kwargs):
         """
         **kwargs eventually goes to ztfquery.Query.get_local_data()
                  -> exists=True, indexes=None, filecheck=True, ignore_warnings=False, etc.
 
         """
-        _filepaths = self.io.get_diffimg_forcepsf_filepath(**kwargs)
+        _filepaths = self.io.get_diffimg_forcepsf_filepath(
+            download_dir=download_dir, **kwargs
+        )
 
         # clean list of missing psf image entries (will be None)
         self._filepathes = [f for f in _filepaths if f[1] is not None]
