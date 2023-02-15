@@ -11,7 +11,7 @@ MAINTAINER_EMAIL = "m.rigault@ipnl.in2p3.fr"
 URL = "https://github.com/MickaelRigault/ztflc/"
 LICENSE = "BSD (3-clause)"
 DOWNLOAD_URL = "https://github.com/MickaelRigault/ztflc/tarball/0.2"
-VERSION = "0.2.10"
+VERSION = "0.3"
 
 try:
     from setuptools import setup, find_packages
@@ -53,7 +53,6 @@ def check_dependencies():
 
 
 if __name__ == "__main__":
-
     install_requires = check_dependencies()
 
     if _has_setuptools:
