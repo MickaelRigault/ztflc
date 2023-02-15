@@ -6,7 +6,10 @@ import pandas as pd
 import numpy as np
 from tqdm import tqdm
 import warnings, multiprocessing
+from astropy.utils.console import ProgressBar
 from .diffdata import DiffData
+
+logger = logging.getLogger(__name__)
 
 
 def run_forcephotometry(
@@ -123,8 +126,6 @@ class ForcePhotometry:
         self.logger.info(
             f"Starting run_forcefit() for {len(indexes)} image differences"
         )
-
-        from astropy.utils.console import ProgressBar
 
         index_count = len(indexes)
         _coords = [self.io.get_coordinate()] * index_count
@@ -273,8 +274,8 @@ class ForcePhotometry:
             dataout = query
 
         else:
-            self.logger.debug("fitting %d " % index)
-            self.logger.debug(filepath[0].split("/")[-1])
+            logger.debug("fitting %d " % index)
+            logger.debug(filepath[0].split("/")[-1])
 
             diffdata = DiffData(*filepath, coords)
             has_nan = np.any(np.isnan(diffdata.diffimg))
@@ -290,7 +291,7 @@ class ForcePhotometry:
                         dataout = {**fitresults, **datainfo}
                         dataout["data_hasnan"] = has_nan
                 except ValueError:
-                    self.logger.debug(
+                    logger.debug(
                         "Shape of diffimg and psfimg do not correspond (index: %d). Skipping."
                         % (index)
                     )
