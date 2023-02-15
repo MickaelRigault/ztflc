@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import logging
 
 import numpy as np
 import pandas
@@ -32,6 +33,7 @@ class ZTFTarget(object):
         self._zquery = query.ZTFQuery()
         if target is not None:
             self.set_name(target)
+        self.logger = logging.getLogger(__name__)
 
     @classmethod
     def from_name(cls, name):
@@ -118,7 +120,6 @@ class ZTFTarget(object):
               - download_dir=None,
               - show_progress=False,
               - notebook=False,
-              - verbose=True,
               - nodl=False,
               - overwrite=False,
               - auth=None,
@@ -169,6 +170,8 @@ class ZTFTarget(object):
         diffpsf = self.get_diffpsf_filepath(
             download_dir=download_dir, exists=exists, indexes=indexes, **kwargs
         )
+        self.logger.debug(f"Found {len(diffimg)} difference images")
+        self.logger.debug(f"Found {len(diffpsf)} PSF images")
 
         out = []
         for diff in diffimg:

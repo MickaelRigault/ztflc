@@ -13,7 +13,6 @@ def run_forcephotometry(
     target,
     download_files=True,
     nprocess=4,
-    verbose=True,
     filecheck=True,
     ignore_warnings=False,
     **kwargs,
@@ -24,7 +23,7 @@ def run_forcephotometry(
     if download_files:
         fp.io.download_data(nprocess=nprocess)
     fp.load_filepathes(filecheck=filecheck, ignore_warnings=ignore_warnings)
-    fp.run_forcefit(update_diffdata=False, verbose=verbose, **kwargs)
+    fp.run_forcefit(update_diffdata=False, **kwargs)
 
 
 class ForcePhotometry:
@@ -98,7 +97,6 @@ class ForcePhotometry:
         indexes=None,
         update_diffdata=False,
         store=False,
-        verbose=True,
         no_badsub=False,
         force_refit=False,
         nprocess=4,
@@ -122,8 +120,9 @@ class ForcePhotometry:
             previous_results = pd.DataFrame(columns=["filename"])
 
         dataout = {}
-        if verbose:
-            print("Starting run_forcefit() for %d image differences" % len(indexes))
+        self.logger.info(
+            f"Starting run_forcefit() for {len(indexes)} image differences"
+        )
 
         from astropy.utils.console import ProgressBar
 
@@ -131,7 +130,6 @@ class ForcePhotometry:
         _coords = [self.io.get_coordinate()] * index_count
         _update_diffdata = [update_diffdata] * index_count
         _no_badsub = [no_badsub] * index_count
-        _verbose = [verbose] * index_count
         _previous_results = [previous_results] * index_count
         _force_refit = [force_refit] * index_count
 
@@ -149,7 +147,6 @@ class ForcePhotometry:
                             _coords,
                             _update_diffdata,
                             _no_badsub,
-                            _verbose,
                             _previous_results,
                             _force_refit,
                         ),
@@ -169,9 +166,8 @@ class ForcePhotometry:
 
         else:
             for i in tqdm(indexes):
-                if verbose:
-                    print("running %d " % i)
-                    print(self.filepathes[i][0].split("/")[-1])
+                self.logger.debug("running %d " % i)
+                self.logger.debug(self.filepathes[i][0].split("/")[-1])
 
                 filename_modified = self.filepathes[i][0].split("/")[-1][:-26] + ".fits"
                 query = previous_results.query("filename == @filename_modified")
@@ -185,17 +181,15 @@ class ForcePhotometry:
 
                 # Now do the actual check
                 if len(query) == 40 and not force_refit:
-                    if verbose:
-                        print("not fitting %d " % i)
+                    self.logger.debug("not fitting %d " % i)
                     dataout[i] = query
 
                 else:
-                    if verbose:
-                        print("fitting %d " % i)
+                    self.logger.debug("fitting %d " % i)
                     diffdata = self.get_ith_diffdata(i, update=update_diffdata)
                     has_nan = np.any(np.isnan(diffdata.diffimg))
                     if has_nan and no_badsub:
-                        print("NaNs in the image, skipped")
+                        self.logger.info("NaNs in the image, skipped")
                     else:
                         try:
                             with warnings.catch_warnings():
@@ -215,7 +209,7 @@ class ForcePhotometry:
 
             self._data_forcefit = pd.DataFrame(dataout).T
 
-            self.logger.debug(f"Fitted {len(self._data_forcefit)} datapoints.")
+            self.logger.info(f"Fitted {len(self._data_forcefit)} datapoints.")
             if store:
                 self.store()
 
@@ -259,7 +253,6 @@ class ForcePhotometry:
             coords,
             update_diffdata,
             no_badsub,
-            verbose,
             previous_results,
             force_refit,
         ) = args
@@ -276,19 +269,17 @@ class ForcePhotometry:
 
         # Now do the actual check
         if len(query) == 40 and not force_refit:
-            if verbose:
-                print("not fitting %d " % index)
+            self.logger.debug("not fitting %d " % index)
             dataout = query
 
         else:
-            if verbose:
-                print("fitting %d " % index)
-                print(filepath[0].split("/")[-1])
+            self.logger.debug("fitting %d " % index)
+            self.logger.debug(filepath[0].split("/")[-1])
+
             diffdata = DiffData(*filepath, coords)
             has_nan = np.any(np.isnan(diffdata.diffimg))
             if has_nan and no_badsub:
-                if verbose:
-                    print("NaNs in the image, skipped")
+                self.logger.debug("NaNs in the image, skipped")
                 return None
             else:
                 try:
