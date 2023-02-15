@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import os
+import os, logging
 import pandas as pd
 import numpy as np
 from tqdm import tqdm
@@ -16,7 +16,7 @@ def run_forcephotometry(
     verbose=True,
     filecheck=True,
     ignore_warnings=False,
-    **kwargs
+    **kwargs,
 ):
     """ """
     fp = ForcePhotometry.from_name(target)
@@ -36,6 +36,7 @@ class ForcePhotometry:
     def __init__(self, ztftarget):
         """ """
         self.io = ztftarget
+        self.logger = logging.getLogger(__name__)
 
     @classmethod
     def from_name(cls, name):
@@ -86,7 +87,8 @@ class ForcePhotometry:
             filename = LOCALDATA + "/%s.csv" % self.io.name
 
         oldmask = os.umask(0o002)
-        self._data_forcefit.to_csv(filename, index=False, mode=mode)
+        if len(self._data_forcefit) > 0:
+            self._data_forcefit.to_csv(filename, index=False, mode=mode)
 
     # -------- #
     # FITTER   #
@@ -203,16 +205,17 @@ class ForcePhotometry:
                                 dataout[i] = {**fitresults, **datainfo}
                                 dataout[i]["data_hasnan"] = has_nan
                         except ValueError:
-                            if verbose:
-                                warnings.warn(
-                                    "Shape of diffimg and psfimg do not correspond (index: %d). Skipping."
-                                    % (i)
-                                )
+                            self.logger.debug(
+                                "Shape of diffimg and psfimg do not correspond (index: %d). Skipping."
+                                % (i)
+                            )
                             pass
                     del diffdata
                 gc.collect()
 
             self._data_forcefit = pd.DataFrame(dataout).T
+
+            self.logger.debug(f"Fitted {len(self._data_forcefit)} datapoints.")
             if store:
                 self.store()
 
@@ -296,11 +299,10 @@ class ForcePhotometry:
                         dataout = {**fitresults, **datainfo}
                         dataout["data_hasnan"] = has_nan
                 except ValueError:
-                    if verbose:
-                        warnings.warn(
-                            "Shape of diffimg and psfimg do not correspond (index: %d). Skipping."
-                            % (index)
-                        )
+                    self.logger.debug(
+                        "Shape of diffimg and psfimg do not correspond (index: %d). Skipping."
+                        % (index)
+                    )
                     return None
             del diffdata
 
@@ -342,7 +344,7 @@ class ForcePhotometry:
                 yerr=err[flag],
                 ls="None",
                 ecolor="0.6",
-                **prop
+                **prop,
             )
 
         ax.axhline(0, ls="--", color="0.5")
