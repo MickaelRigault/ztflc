@@ -7,10 +7,10 @@ LightCurve Estimation from ZTF data
 
 ### Credit
 
-M. Rigault (corresponding author, m.rigault@ipnl.in2p3.fr, CNRS/IN2P3).
-A similar code exists [here](https://github.com/yaoyuhan/ForcePhotZTF), used for the ZTF high cadence SNeIa paper [Yao et al. 2019](http://cdsads.u-strasbg.fr/abs/2019arXiv191002967Y).
+- M. Rigault m.rigault@ipnl.in2p3.fr, CNRS/IN2P3
+- S. Reusch: simeon.reusch@desy.de, DESY
 
-`ztflc` is however solely based on [ztfquery](https://github.com/MickaelRigault/ztfquery).
+`ztflc` is however based on [ztfquery](https://github.com/MickaelRigault/ztfquery).
 
 ### Acknowledgment
 
