@@ -11,7 +11,7 @@ MAINTAINER_EMAIL = "m.rigault@ipnl.in2p3.fr"
 URL = "https://github.com/MickaelRigault/ztflc/"
 LICENSE = "BSD (3-clause)"
 DOWNLOAD_URL = "https://github.com/MickaelRigault/ztflc"
-VERSION = "0.3.0"
+VERSION = "0.3.1"
 
 try:
     from setuptools import setup, find_packages
