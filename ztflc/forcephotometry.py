@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import os, logging
-import pandas as pd
+import logging
+import multiprocessing
+import os
+import warnings
+from pathlib import Path
+
 import numpy as np
-from tqdm import tqdm
-import warnings, multiprocessing
+import pandas as pd
 from astropy.utils.console import ProgressBar
+from tqdm import tqdm
+
 from .diffdata import DiffData
 
 logger = logging.getLogger(__name__)
@@ -85,8 +90,10 @@ class ForcePhotometry:
         """ """
         if filename is None:
             from .io import LOCALDATA
+            filename = LOCALDATA / f"{self.io.name}.csv"
 
-            filename = LOCALDATA + "/%s.csv" % self.io.name
+        else:
+            filename = Path(filename)
 
         oldmask = os.umask(0o002)
         if len(self._data_forcefit) > 0:
@@ -112,10 +119,10 @@ class ForcePhotometry:
 
         from .io import LOCALDATA
 
-        path_previous_results = os.path.join(LOCALDATA, "{}.csv".format(self.io.name))
+        path_previous_results = LOCALDATA / f"{self.io.name}.csv"
 
         # Try to load previous fit results
-        if os.path.isfile(path_previous_results):
+        if path_previous_results.is_file():
             previous_results = pd.read_csv(
                 path_previous_results, float_precision="round_trip", comment="#"
             )

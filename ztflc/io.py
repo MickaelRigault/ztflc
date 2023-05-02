@@ -2,20 +2,20 @@
 # -*- coding: utf-8 -*-
 
 import logging
+import os
+from pathlib import Path
 
 import numpy as np
 import pandas
 from astropy.io import fits
-
-from ztfquery import query, marshal
+from ztfquery import marshal, query
 from ztfquery.io import LOCALSOURCE
 
-LOCALDATA = LOCALSOURCE + "forcephotometry/"
+LOCALDATA = Path(LOCALSOURCE) / "forcephotometry"
+TARGET_POS = LOCALSOURCE / "externaldata" / "target_position.csv"
 
-import os
-
-if os.path.isfile(LOCALSOURCE + "/externaldata/target_position.csv"):
-    TARGET_IO = pandas.read_csv(LOCALSOURCE + "/externaldata/target_position.csv")
+if TARGET_POS.is_file():
+    TARGET_IO = pandas.read_csv(TARGET_POS)
 else:
     TARGET_IO = pandas.DataFrame(
         columns=["name", "mean_ra", "mean_dec", "median_ra", "median_dec"]
