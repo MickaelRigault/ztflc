@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ztflc"
-version = "0.3.2"
+version = "0.3.3"
 description = "Perform force photometry fits of ZTF lightcurves"
 authors = ["Mickael Rigault <m.rigault@ipnl.in2p3.fr>", "Simeon Reusch <simeon.reusch@desy.de>"]
 maintainers = ["Mickael Rigault <m.rigault@ipnl.in2p3.fr>", "Simeon Reusch <simeon.reusch@desy.de>"]
