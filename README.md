@@ -3,6 +3,7 @@ LightCurve Estimation from ZTF data
 
 
 [![PyPI](https://img.shields.io/pypi/v/ztflc.svg?style=flat-square)](https://pypi.python.org/pypi/ztflc)
+[![DOI](https://zenodo.org/badge/204447361.svg)](https://zenodo.org/doi/10.5281/zenodo.10700789)
 
 
 ### Credit
