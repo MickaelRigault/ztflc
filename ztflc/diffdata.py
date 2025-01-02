@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import warnings
+
 import numpy as np
 from astropy.io import fits
 from scipy import stats
@@ -21,8 +22,9 @@ class DiffData(object):
     # ------- #
     def fit_flux(self, **kwargs):
         """ """
-        from .fitter import DiffImgFitter
         from astropy.stats import mad_std
+
+        from .fitter import DiffImgFitter
 
         # Load the fitter
         self.fitter = DiffImgFitter(self.diffimg, self.psfimg, 0, shape=self.psfshape)
@@ -53,8 +55,8 @@ class DiffData(object):
         """ """
         from astropy import wcs
         from astropy.io import fits
-        from scipy import ndimage
         from astropy.stats import mad_std
+        from scipy import ndimage
 
         self._xy = coords if inpixels else None
         #
@@ -101,7 +103,7 @@ class DiffData(object):
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 flagout = self._diffimg < -mad_std(self._diffimg) * 10
-            self._diffimg[flagout] = np.NaN
+            self._diffimg[flagout] = np.nan
         else:
             self._iscleaned = False
 
